@@ -22,6 +22,18 @@ Deterministic measures these properties statically and deterministically.
 
 ---
 
+## Scoring
+
+Deterministic computes a single repository score (0-100) that reflects how friendly and predictable your codebase is for AI agents.
+
+The score is based on:
+- **File-level quality** (dominant factor)
+- **Repo-level penalties** (lightweight adjustments)
+
+See [scoring.md](scoring.md) for the complete algorithm and design rationale.
+
+---
+
 ## What it is not
 
 - Not a code formatter
