@@ -2,9 +2,11 @@
 
 **Linter for the AI coding agent era**
 
-Deterministic is a semantic linter that helps developers get better results from AI coding agents by making codebases more explicit, predictable, and machine-readable.
+Deterministic is a semantic linter that helps developers get better results from AI coding agents by making codebases more explicit, predictable, and readable for AI agents.
 
-As AI agents increasingly write and modify code, the limiting factor is no longer generation — it is **context, clarity, and determinism**.
+As AI agents increasingly write and modify code, the limiting factor is no longer the speed you can write code — it is the speed in which a human can validate the AI's work 
+code projects are now optimizing for AI first development investing time and effort in
+**improving context, reducing token costs, improving code clarity, adding code quality tools**.
 
 Deterministic measures these properties statically and deterministically.
 
@@ -35,6 +37,7 @@ While “good code” is subjective, there is no debate that AI coding agents ne
 
 Deterministic measures quantities (documentation, structure, guardrails, conventions) to infer how approachable and safe a codebase is for AI-driven development.
 
+our philosophy `quantity effects quality`
 ---
 
 ## Status
