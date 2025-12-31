@@ -1,4 +1,3 @@
-<img width="1536" height="1024" alt="Determinstic-social" src="https://github.com/user-attachments/assets/4ab990da-9473-4dce-8b2c-4588955b7ead" />
 # Deterministic
 
 **Linter for the AI coding agent era**
