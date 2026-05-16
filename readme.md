@@ -1,62 +1,149 @@
 # Deterministic
 
-**Linter for the AI coding agent era**
+> Deterministic engineering for AI agents.  
+> Writing code is now cheap. Shipping bad code is still expensive.
 
-Deterministic is a semantic linter that helps developers get better results from AI coding agents by making codebases more explicit, predictable, and readable for AI agents.
+## TL;DR
 
-As AI agents increasingly write and modify code, the limiting factor is no longer the speed you can write code — it is the speed in which a human can validate the AI's work 
-code projects are now optimizing for AI first development investing time and effort in
-**improving context, reducing token costs, improving code clarity, adding code quality tools**.
+Deterministic is like a linter for AI coding agents.
 
-Deterministic measures these properties statically and deterministically.
+It validates:
+1. The task
+2. The repository
+3. The execution
 
----
-
-## What it does
-
-- Analyzes a repository locally (no AI, no network calls)
-- Measures information availability and explicit intent
-- Flags hidden behavior, missing context, and ambiguity
-- Produces a clear score and actionable findings
-- Designed for local use and CI
+The goal is to make AI-driven software delivery more deterministic, verifiable, and trustworthy.
 
 ---
 
-## Scoring
+## The Problem
 
-Deterministic computes a single repository score (0-100) that reflects how friendly and predictable your codebase is for AI agents.
+AI agents can generate code extremely fast.
 
-The score is based on:
-- **File-level quality** (dominant factor)
-- **Repo-level penalties** (lightweight adjustments)
+But fast code generation creates new problems:
+- vague tasks
+- shallow implementations
+- missing edge cases
+- broken workflows
+- architectural drift
+- false confidence
 
-See [scoring.md](scoring.md) for the complete algorithm and design rationale.
+Most tools today answer:
+
+> “Did the code compile?”
+
+Deterministic asks:
+
+> “Can this work actually be verified as complete?”
 
 ---
 
-## What it is not
+## What Deterministic Does
 
-- Not a code formatter
-- Not a style linter
-- Not an AI code generator
-- Not a SaaS (your code never leaves your machine)
+### 1. Validate Tasks
+
+Detects:
+- ambiguous requirements
+- missing acceptance criteria
+- non-measurable goals
+- undefined validation paths
+
+Example:
+
+```md
+Improve dashboard performance
+```
+
+↓
+
+```txt
+Missing:
+- target latency
+- measurement method
+- browser/device scope
+- regression validation
+```
 
 ---
 
-## Core idea
+### 2. Validate Repositories
 
-While “good code” is subjective, there is no debate that AI coding agents need **explicit context**.
+Analyzes:
+- CI/CD
+- test coverage
+- architecture boundaries
+- reproducibility
+- automation maturity
 
-Deterministic measures quantities (documentation, structure, guardrails, conventions) to infer how approachable and safe a codebase is for AI-driven development.
+Detects:
+- missing E2E coverage
+- flaky workflows
+- weak validation systems
+- unenforced architecture rules
 
-our philosophy `quantity effects quality`
 ---
 
-## Status
+### 3. Validate Agent Execution
 
-🚧 Early development / experimental
+Runs after an AI agent completes work.
 
-APIs, rules, and scoring may change.
+Checks:
+- tests
+- linting
+- type safety
+- E2E flows
+- architecture constraints
+- validation coverage
+
+Example:
+
+```txt
+Task incomplete.
+
+Missing:
+- mobile validation
+- API contract verification
+- loading-state coverage
+```
+
+---
+
+## Example Workflow
+
+```bash
+deterministic analyze-ticket ./ticket.md
+
+deterministic analyze-repo
+
+codex run ./ticket.md
+
+deterministic validate
+```
+
+---
+
+## Vision
+
+AI agents make code generation cheap.
+
+Deterministic helps make software delivery trustworthy.
+
+The future of software engineering is not just generating code faster.
+
+It is building deterministic systems that can validate correctness, reliability, and completion automatically.
+
+---
+
+## Planned Features
+
+- Task determinism scoring
+- Repository determinism scoring
+- AI-agent completion validation
+- GitHub Action integration
+- PR annotations
+- Architecture linting
+- Test strategy recommendations
+- CI enforcement mode
 
 ---
 
