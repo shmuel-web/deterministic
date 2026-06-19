@@ -1,50 +1,71 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Deterministic Constitution
+
+A linter for AI coding agents. It validates the *task*, the *repo*, and the
+*execution* — so AI-driven delivery becomes verifiable, not just fast. These
+principles are the non-negotiable spine; specs, plans, and tasks are checked
+against them.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. The Rule Contract Is the Frozen Keystone
+Everything scores through one interface: `Rule { id, target: file|repo|ticket, type: static|llm, run(context) → { score, weight, reasoning } }`.
+- The contract MUST stay language-agnostic. Language-specific logic (TS, etc.) lives *inside* individual rules, never in the interface.
+- A score is computed from rules — never from one monolithic prompt that "vibes a number."
+- Changing the contract's shape is a MAJOR governance event (see Governance). New rules are not.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Determinism Where It's Achievable, Judgment Where It Isn't
+The mix of static and LLM rules is a property of the *target*, not a fallback ranking — both kinds run and compose into one score.
+- **Code (files, tasks) leans deterministic:** linters, AST checks, type checks, coverage — repeatable scripts carry the score. This is where the name *Deterministic* is most literal.
+- **Tickets lean on judgment:** an LLM evaluates what no script can — is the intent legible, is the scope coherent, *how good* is the Definition of Done.
+- **Static and LLM are complementary, not alternatives.** One concern often needs both: a static rule checks a ticket *has* a Definition of Done (present/absent, no model needed); an LLM rule judges the *quality* of that DoD. Both are real signals on the same target.
+- An LLM is REQUIRED — judgment rules are never silently skipped. A run with no model configured (local or remote) is an error, not a degraded pass.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Every Score Is Auditable
+No black-box numbers.
+- Every score MUST be decomposable into the exact rules that fired, their weights, and a human-readable `reasoning` string per signal.
+- `reasoning` is mandatory on every signal. "Measured, not assumed" is literal.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Annotations Compose Up
+The file is the atomic scoring unit. Repo and ticket scores are composites.
+- Repo/ticket scores MUST be composed from persisted file annotations plus target-level traits — never by re-reading the whole tree.
+- Scoring MUST be incremental: touch a file → re-annotate that one file → higher-level scores update cheaply. No O(whole-repo) runs.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Local-First — but an LLM Is Always Required
+An LLM is mandatory (scoring always uses judgment), so a model must always be reachable. Local is the default, not the only option.
+- The default is a local LLM (Ollama, `localhost:11434`): zero-permission, no keys, no data leaving the laptop — the adoption wedge.
+- If no local model is available, the user MUST provide an LLM API (endpoint + key). The tool fails fast with a clear message when neither is configured; it never scores without judgment.
+- CI integration (GitLab/GitHub) is an OPTIONAL enhancement. Core value MUST work locally before any CI is wired.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Trust the Model's Output Only After Validation (NON-NEGOTIABLE)
+Local models emit flakier JSON than a frontier API.
+- Every LLM rule output MUST be validated against a Zod schema before use, with validate-and-retry on failure.
+- A malformed model response MUST degrade gracefully (neutral signal), never crash a run or poison a score.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Technology Constraints (locked)
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- **Language/runtime:** TypeScript, Node 18+, ESM (NodeNext).
+- **Agent orchestration:** Mastra.
+- **LLM (required):** default is a local model — Ollama serving **Qwen 3 Coder** at `localhost:11434`. Fallback is a user-provided LLM API (endpoint + key) when no local model is available. Used by LLM rules; static rules need no model.
+- **Validation:** Zod on every LLM rule output.
+- **Repo detection:** file-based.
+- **Observability:** Langfuse via OpenTelemetry.
+- **Explicitly NOT used:** LangGraph JS, OMA.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Deployment/hosting is explicitly out of scope — local-on-every-laptop is the target.
+
+## Development Workflow
+
+- **Spec-driven:** features flow through Spec-Kit — `specify → plan → tasks → implement` with review gates. No implementation lane starts before its spec is approved.
+- **Everyone writes rules:** the cleanest unit of parallel contribution is a single rule authored against the frozen contract. Rules land independently and often.
+- **Visible teamwork:** contributors commit under their own name; small, legible commits over large opaque ones.
+- **Dogfooding:** we run Deterministic on Deterministic; our own scored artifacts are the demo.
+- **Protect the happy path:** the end-to-end workflow (`score-file` → compose → validate) must keep working; new rules must not break a run.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes ad-hoc practice. Specs, plans, and reviews verify compliance with the principles above.
+- **Rule-contract changes** (Principle I) require a MAJOR version bump, explicit rationale, and a migration note for existing rules/annotations.
+- Complexity must be justified against the principles; when in doubt, prefer the simpler, more deterministic, more local option.
+- Runtime development guidance lives in `CLAUDE.md` and `docs/PLAN.md`; this document is the source of principle-level truth.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-06-19 | **Last Amended**: 2026-06-19
