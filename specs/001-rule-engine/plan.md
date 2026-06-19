@@ -11,7 +11,7 @@ Build the keystone of Deterministic: a frozen, language-agnostic **Rule contract
 
 **Language/Version**: TypeScript 5.x, Node 18+ (dev on Node 24), ESM / NodeNext
 **Primary Dependencies**: Zod (schema validation), Mastra (agent orchestration for LLM rules), Ollama HTTP API (`localhost:11434`, model `qwen3-coder`); tsx for dev run
-**Storage**: Local JSON annotation store (`.deterministic/annotations.json`); committed-vs-CI decision deferred (see research.md)
+**Storage**: In-file comment annotations in each file's native syntax (committed in-repo); `<name>.deterministic.md` sidecar fallback for comment-less formats (see research.md D2). The file is the source of truth.
 **Testing**: `node:test` + `tsx` for unit/contract tests; static rules are deterministic and unit-tested; the LLM path is contract-tested with a stubbed `ModelClient`
 **Target Platform**: Developer laptop (macOS/Linux), CLI, fully local
 **Project Type**: Single project — CLI + library (`src/`)
@@ -28,7 +28,7 @@ Build the keystone of Deterministic: a frozen, language-agnostic **Rule contract
 | I. Frozen language-agnostic contract | One `Rule` interface in `src/core/rule.ts`; TS-specific logic lives only inside individual rules. Contract shape is the reviewed artifact (`contracts/rule-contract.md`). |
 | II. Determinism where achievable, judgment where not | Static rules run inline and carry weight; LLM rules via agents; both compose. DoD pair (static presence + LLM quality) is in the starter set. |
 | III. Auditable scores | `Arbitrator` output enumerates every signal (id, weight, reasoning); `reasoning` required by the Zod schema. |
-| IV. Annotations compose up | File is the atomic unit; annotations persisted and keyed; repo/ticket lanes read them — no whole-tree re-reads. |
+| IV. Annotations compose up | File is the atomic unit; the annotation is written into the file as a comment block; repo/ticket lanes read those blocks for changed files — no whole-tree re-reads. |
 | V. Local-first, LLM required | `resolveModel()`: local Ollama → user API → hard error. Judgment never silently skipped. |
 | VI. Validate model output | LLM rule output Zod-validated with retry; malformed → neutral signal, never crash/poison. |
 
@@ -57,7 +57,8 @@ src/
 │   ├── rule.ts          # Rule contract + Zod schemas (RuleSignal, ModelClient) — Principle I
 │   ├── orchestrator.ts  # Gather applicable rules; run static inline / LLM via agents
 │   ├── arbitrator.ts    # Compose weighted signals → one auditable score
-│   ├── annotation.ts    # Annotation schema + local store (read/write, keyed)
+│   ├── annotation.ts    # Read/parse/write the in-file @deterministic comment block (idempotent); strip-before-score
+│   ├── comment-style.ts # Extension → comment syntax (// , #, /* */, <!-- -->); sidecar fallback
 │   └── model.ts         # resolveModel(): local Ollama → user API → hard error
 ├── agents/
 │   └── roles.ts         # Scout / Reviewers / Arbitrator / Orchestrator role interfaces (Mastra wiring staged)

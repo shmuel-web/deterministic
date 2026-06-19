@@ -11,7 +11,7 @@
 pnpm install
 pnpm deterministic score-file src/core/orchestrator.ts
 ```
-Expected: a `0–100` score and a per-rule breakdown (id, weight, reasoning), plus an annotation written to `.deterministic/annotations.json`.
+Expected: a `0–100` score and a per-rule breakdown (id, weight, reasoning), plus a `@deterministic` comment block written **into the scored file itself** (native comment syntax) so the next agent reads its standing inline.
 
 ```text
   src/core/orchestrator.ts  →  91/100

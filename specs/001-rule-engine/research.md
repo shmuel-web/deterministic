@@ -13,13 +13,21 @@ Resolves the unknowns flagged in the spec and plan. Each decision records the ch
 
 **Rejected**: Skip LLM rules when no model (violates V — the bug we corrected in the constitution); require an API always (kills the zero-permission local wedge).
 
-## D2. Annotation storage — committed vs CI metadata (open question)
+## D2. Annotation representation — in-file comments (RESOLVED)
 
-**Decision (Lane 0 default)**: Local JSON store at `.deterministic/annotations.json`, **git-ignored** for now. The schema and store API are stable; *where* annotations ultimately live (committed in-repo vs. CI artifact) is owned by the DevOps lane (Lane 4) and does not change the schema.
+**Decision**: Annotations live **inside the scored file as native-syntax comments**, not in a sidecar store. Deterministic maintains an idempotent, sentinel-delimited block using the file's own comment syntax (`//` for JS/TS, `#` for Python/shell/YAML, `/* */` for CSS, `<!-- -->` for Markdown/HTML, …). The block records the composite score, each rule's signal, and a short "next agent" hint. Annotations are **committed in-repo** (visible in diffs, MRs, and the demo).
 
-**Rationale**: Lane 0 must not block on a workflow decision. Keeping the store ignored avoids churn/merge-noise during the hackathon while the format is exercised. Switching to committed later is a `.gitignore` change, not a schema change.
+This makes the annotation a **feedback channel to the next AI agent**: the next time an agent or human opens the file, it reads inline that coverage is low, the file is too long, or a refactor is suggested — and acts on it before extending the file. Putting the score where the agent will see it is the literal point of "a linter for AI agents."
 
-**Rejected**: Commit annotations now (premature; noisy diffs while format settles); CI-only metadata (breaks local-first — Principle V).
+**Mechanics**:
+- **Idempotent**: the writer finds the existing `@deterministic` block by its sentinel and replaces it; otherwise inserts at the top of the file. Re-scoring never appends duplicates.
+- **Self-stripping**: the scorer removes Deterministic's own block from the content *before* running rules, so the annotation never skews a score (e.g. `file-length` must not count the annotation's own lines).
+- **Comment-style resolution**: an extension → comment-syntax map. Files with no comment syntax (e.g. JSON) fall back to a sibling `<name>.deterministic.md` sidecar.
+- **Source of truth = the files themselves.** Repo/ticket composition reads the in-file blocks of changed files (incremental — Principle IV); an aggregate index is an optional later optimization, not required for Lane 0.
+
+**Rationale**: Closes the agent feedback loop directly; committed + diffable + demo-ready ("files wearing their annotations").
+
+**Rejected**: Sidecar JSON store as source of truth (the agent editing the file never sees it — defeats the loop); CI-only metadata (not local, not visible — breaks Principle V); git-ignored store (invisible to the demo and the next agent).
 
 ## D3. Reviewer agents — how much to build in Lane 0
 
