@@ -1,0 +1,28 @@
+{
+  "name": "deterministic",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A linter for AI coding agents — validates the task, the repo, and the execution.",
+  "bin": {
+    "deterministic": "dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx src/cli.ts",
+    "deterministic": "tsx src/cli.ts",
+    "test": "tsx --test tests/contract/*.test.ts tests/integration/*.test.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}
