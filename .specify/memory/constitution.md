@@ -13,10 +13,12 @@ Everything scores through one interface: `Rule { id, target: file|repo|ticket, t
 - A score is computed from rules — never from one monolithic prompt that "vibes a number."
 - Changing the contract's shape is a MAJOR governance event (see Governance). New rules are not.
 
-### II. Determinism First — Static Rules Carry the Weight
-Static rules (AST, complexity metrics, regex, `tsc`) are fast, free, and perfectly repeatable; they are the backbone that makes the name *Deterministic* honest.
-- LLM rules MUST be reserved for genuine judgment calls (intent legibility, scope coherence).
-- A target's score MUST NOT depend solely on LLM rules. When no model is available, static rules still produce a meaningful score.
+### II. Determinism Where It's Achievable, Judgment Where It Isn't
+The mix of static and LLM rules is a property of the *target*, not a fallback ranking — both kinds run and compose into one score.
+- **Code (files, tasks) leans deterministic:** linters, AST checks, type checks, coverage — repeatable scripts carry the score. This is where the name *Deterministic* is most literal.
+- **Tickets lean on judgment:** an LLM evaluates what no script can — is the intent legible, is the scope coherent, *how good* is the Definition of Done.
+- **Static and LLM are complementary, not alternatives.** One concern often needs both: a static rule checks a ticket *has* a Definition of Done (present/absent, no model needed); an LLM rule judges the *quality* of that DoD. Both are real signals on the same target.
+- When the local model is unavailable, LLM rules are skipped and the result MUST be reported as a partial, deterministic-only score — never presented as a complete ticket/judgment score.
 
 ### III. Every Score Is Auditable
 No black-box numbers.
