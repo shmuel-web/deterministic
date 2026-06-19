@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "git": {
+      "version": "1.5.0",
+      "source": "local",
+      "manifest_hash": "sha256:045085903a1187279ac6fcbd31f12f2dd79e660816032660621096c3e9acc522",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "git.feature",
+          "git.validate",
+          "git.remote",
+          "git.initialize",
+          "git.commit",
+          "git.workspace",
+          "git.setup-ignore",
+          "git.task",
+          "git.task-merge",
+          "git.task-list"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-06-19T12:22:14.790058+00:00"
+    },
+    "agent-context": {
+      "version": "1.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:9a1dc02d2d0139bb03860392ecacef79183be2c442feda2f9ccaa4e5907b1e47",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.agent-context.update"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-06-19T12:22:14.945384+00:00"
+    },
+    "levelup": {
+      "version": "1.9.0",
+      "source": "local",
+      "manifest_hash": "sha256:4ba58d7e1822e3712ed809804b257111217a7685c4ec4035eb479cb7a774c02f",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "levelup.init",
+          "levelup.clarify",
+          "levelup.specify",
+          "levelup.skill",
+          "levelup.implement",
+          "levelup.validate"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-06-19T12:22:15.149165+00:00"
+    },
+    "quick": {
+      "version": "1.3.0",
+      "source": "local",
+      "manifest_hash": "sha256:97d108e1ae1efb6c2477ff7ba4b8c66045971727eca9aef908b8efb70ce7536d",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "quick.implement",
+          "quick.levelup"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-06-19T12:22:15.211778+00:00"
+    }
+  }
+}
