@@ -18,7 +18,7 @@ The mix of static and LLM rules is a property of the *target*, not a fallback ra
 - **Code (files, tasks) leans deterministic:** linters, AST checks, type checks, coverage — repeatable scripts carry the score. This is where the name *Deterministic* is most literal.
 - **Tickets lean on judgment:** an LLM evaluates what no script can — is the intent legible, is the scope coherent, *how good* is the Definition of Done.
 - **Static and LLM are complementary, not alternatives.** One concern often needs both: a static rule checks a ticket *has* a Definition of Done (present/absent, no model needed); an LLM rule judges the *quality* of that DoD. Both are real signals on the same target.
-- When the local model is unavailable, LLM rules are skipped and the result MUST be reported as a partial, deterministic-only score — never presented as a complete ticket/judgment score.
+- An LLM is REQUIRED — judgment rules are never silently skipped. A run with no model configured (local or remote) is an error, not a degraded pass.
 
 ### III. Every Score Is Auditable
 No black-box numbers.
@@ -30,10 +30,11 @@ The file is the atomic scoring unit. Repo and ticket scores are composites.
 - Repo/ticket scores MUST be composed from persisted file annotations plus target-level traits — never by re-reading the whole tree.
 - Scoring MUST be incremental: touch a file → re-annotate that one file → higher-level scores update cheaply. No O(whole-repo) runs.
 
-### V. Local-First, Zero-Permission
-The whole tool runs on the developer's machine.
-- Model calls MUST go to a local LLM (Ollama, `localhost:11434`) by default — no API keys, no cloud, no data leaving the laptop.
-- CI integration (GitLab/GitHub) is an OPTIONAL enhancement. Core value MUST work fully local before any CI is wired.
+### V. Local-First — but an LLM Is Always Required
+An LLM is mandatory (scoring always uses judgment), so a model must always be reachable. Local is the default, not the only option.
+- The default is a local LLM (Ollama, `localhost:11434`): zero-permission, no keys, no data leaving the laptop — the adoption wedge.
+- If no local model is available, the user MUST provide an LLM API (endpoint + key). The tool fails fast with a clear message when neither is configured; it never scores without judgment.
+- CI integration (GitLab/GitHub) is an OPTIONAL enhancement. Core value MUST work locally before any CI is wired.
 
 ### VI. Trust the Model's Output Only After Validation (NON-NEGOTIABLE)
 Local models emit flakier JSON than a frontier API.
@@ -44,7 +45,7 @@ Local models emit flakier JSON than a frontier API.
 
 - **Language/runtime:** TypeScript, Node 18+, ESM (NodeNext).
 - **Agent orchestration:** Mastra.
-- **Local LLM:** Ollama serving **Qwen 3 Coder** at `localhost:11434` (LLM rules only; static rules need no model).
+- **LLM (required):** default is a local model — Ollama serving **Qwen 3 Coder** at `localhost:11434`. Fallback is a user-provided LLM API (endpoint + key) when no local model is available. Used by LLM rules; static rules need no model.
 - **Validation:** Zod on every LLM rule output.
 - **Repo detection:** file-based.
 - **Observability:** Langfuse via OpenTelemetry.
