@@ -1,30 +1,54 @@
 #!/usr/bin/env node
-import { scoreFile } from "./commands/score-file.js";
-import { analyzeRepo } from "./commands/analyze-repo.js";
-import { analyzeTicket } from "./commands/analyze-ticket.js";
-import { validate } from "./commands/validate.js";
+import { init } from "./commands/init.js";
+import { scoreRepo } from "./commands/score-repo.js";
+import { scoreTicket } from "./commands/score-ticket.js";
+import { validateTicket } from "./commands/validate-ticket.js";
+import { scoreFile } from "./commands/score-file.js"; // internal/dev only
 
 const HELP = `deterministic — a linter for AI coding agents
 
 Usage:
-  deterministic score-file <path>      score a single file (writes an in-file annotation)
-  deterministic analyze-repo           compose a repo score          (Lane 1)
-  deterministic analyze-ticket <md>    score a ticket / blast radius (Lane 2)
-  deterministic validate               re-score a diff after the agent (Lane 3)
+  deterministic init                     first run: score & annotate the whole repo (expensive)
+  deterministic score repo               recompute the repo score (cheap, incremental)
+  deterministic score ticket <path>      score a ticket
+  deterministic validate ticket <path>   run tests/checks + re-score touched files → confirm done
+
+File scoring is the internal atomic unit the commands above compose; it is not a
+public command. (\`deterministic file <path>\` exists for dev/dogfooding only.)
 `;
 
+function unknown(what: string): void {
+  console.error(`Unknown command: ${what}\n`);
+  console.log(HELP);
+  process.exitCode = 1;
+}
+
 async function main(): Promise<void> {
-  const [command, ...rest] = process.argv.slice(2);
+  const [command, sub, ...rest] = process.argv.slice(2);
   switch (command) {
-    case "score-file": await scoreFile(rest[0]); break;
-    case "analyze-repo": await analyzeRepo(); break;
-    case "analyze-ticket": await analyzeTicket(rest[0]); break;
-    case "validate": await validate(); break;
-    case undefined: case "help": case "--help": case "-h": console.log(HELP); break;
-    default:
-      console.error(`Unknown command: ${command}\n`);
+    case "init":
+      await init();
+      break;
+    case "score":
+      if (sub === "repo") await scoreRepo();
+      else if (sub === "ticket") await scoreTicket(rest[0]);
+      else unknown(`score ${sub ?? ""}`.trim());
+      break;
+    case "validate":
+      if (sub === "ticket") await validateTicket(rest[0]);
+      else unknown(`validate ${sub ?? ""}`.trim());
+      break;
+    case "file": // internal/dev: score a single file directly
+      await scoreFile(sub);
+      break;
+    case undefined:
+    case "help":
+    case "--help":
+    case "-h":
       console.log(HELP);
-      process.exitCode = 1;
+      break;
+    default:
+      unknown(command);
   }
 }
 

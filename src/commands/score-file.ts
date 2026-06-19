@@ -6,9 +6,11 @@ import { writeAnnotation, stripAnnotation } from "../core/annotation.js";
 import { resolveModel } from "../core/model.js";
 
 /**
- * score-file — the atomic unit. Score one file, persist the annotation INTO the
- * file, print the auditable breakdown. Strips any prior annotation before
- * scoring so the annotation never skews a score (Principle IV).
+ * Internal file scoring — the atomic unit `init`, `score repo`, and
+ * `validate ticket` compose. NOT a public command (exposed only as the hidden
+ * `deterministic file <path>` for dev/dogfooding). Scores one file, persists the
+ * annotation INTO the file, prints the auditable breakdown. Strips any prior
+ * annotation before scoring so the annotation never skews a score (Principle IV).
  */
 export async function scoreFile(file?: string): Promise<void> {
   if (!file) throw new Error("usage: deterministic score-file <path>");
