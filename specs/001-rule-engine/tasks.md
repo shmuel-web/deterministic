@@ -17,7 +17,7 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 
 - [ ] **T001** [SYNC] Initialize TypeScript project: `package.json` (ESM, `type:module`, bin `deterministic`, scripts dev/build/typecheck/test), `tsconfig.json` (NodeNext, strict), deps `zod`, devDeps `typescript`/`tsx`/`@types/node`.
 - [ ] **T002** [P] Create source tree: `src/core/`, `src/rules/static/`, `src/rules/llm/`, `src/commands/`, `tests/{contract,unit,integration}/`.
-- [ ] **T003** [P] Configure `node:test` + `tsx` test runner and a `pnpm test` script.
+- [ ] **T003** [P] Configure `node:test` + `tsx` test runner and an `npm test` script.
 
 ## Phase 2: Foundational — the Keystone (BLOCKS all user stories)
 
@@ -39,7 +39,7 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 **Goal**: `score-file <path>` → 0–100 score + per-rule breakdown + in-file annotation. **Independent test**: run it on a repo file, see the breakdown and the written `@deterministic` block.
 
 - [ ] **T012** [SYNC] [US1] Implement `src/commands/score-file.ts` — read file, strip prior annotation, run rules via Orchestrator, `arbitrate()`, write the in-file annotation block, print the breakdown. (Depends Phase 2)
-- [ ] **T013** [US1] Implement `src/cli.ts` — dispatch `score-file` (+ help); stubs for other commands.
+- [ ] **T013** [US1] Implement `src/cli.ts` — public commands `init` / `score repo|ticket` / `validate ticket` (stubs) + hidden internal `file <path>` dev command + help.
 - [ ] **T014** [P] [US1] [ASYNC] Static rule `src/rules/static/file-length.ts` (soft cap ~300 lines). Register in config.
 - [ ] **T015** [P] [US1] [ASYNC] Static rule `src/rules/static/missing-types.ts` (penalize `any` in TS files; inert elsewhere). Register in config.
 - [ ] **T016** [US1] Integration test `tests/integration/score-file.test.ts` — score a fixture file, assert score range, breakdown present, and annotation written + idempotent on re-run (SC-001, SC-002, SC-005).
@@ -81,7 +81,7 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] **T027** [P] [ASYNC] Lane stubs: `analyze-repo.ts` (Lane 1), `analyze-ticket.ts` (Lane 2), `validate.ts` (Lane 3) — throw "Lane N — not implemented".
+- [ ] **T027** [P] [ASYNC] Lane stubs: `init.ts` + `score-repo.ts` (Lane 1), `score-ticket.ts` (Lane 2), `validate-ticket.ts` (Lane 3) — throw "Lane N — not implemented".
 - [ ] **T028** [P] Update `README.md` + `CLAUDE.md` with `score-file` usage and the annotation behavior.
 - [ ] **T029** Run `quickstart.md` end-to-end against this repo (dogfood); capture a real annotated file for the demo.
 

@@ -90,7 +90,7 @@ A single concern can need both rule kinds. For a ticket's Definition of Done: a 
 - **FR-004**: The Arbitrator MUST compose signals into a single 0–100 score using transparent weighting, and the result MUST enumerate every contributing rule with its weight and reasoning (auditable — Principle III).
 - **FR-005**: The system MUST resolve a model before any run: local Ollama by default, user-provided LLM API as fallback, and a hard actionable error if neither is configured. Judgment rules MUST NOT be silently skipped (Principle V).
 - **FR-006**: LLM rule output MUST be schema-validated with validate-and-retry; malformed responses MUST degrade to a neutral signal, never crash a run or poison a score (Principle VI).
-- **FR-007**: The system MUST provide a `score-file` capability that scores one file end-to-end and prints the auditable breakdown.
+- **FR-007**: The system MUST provide **internal file scoring** (the atomic unit) that scores one file end-to-end and prints the auditable breakdown. It is composed by the public commands (`init`, `score repo`, `validate ticket`); it is NOT a public command (exposed directly only as a hidden `file` dev command).
 - **FR-008**: A file score MUST be persisted as an annotation (target, path, score, signals, timestamp), keyed so higher-level scores can compose from it incrementally without re-reading the tree (Principle IV).
 - **FR-009**: Rules MUST be registered with weights in project config; a project MUST be able to enable/disable/reweight rules without engine changes. Config weight overrides a rule's self-reported weight.
 - **FR-010**: A starter rule set MUST ship: static file rules (file length, missing types), an LLM file rule (intent legibility), and the ticket Definition-of-Done pair (static presence + LLM quality).
@@ -120,5 +120,5 @@ A single concern can need both rule kinds. For a ticket's Definition of Done: a 
 
 - Per the constitution, the stack is TypeScript/Node with a local Ollama + Qwen 3 Coder model available on dev machines; the hackathon scope is TypeScript-only.
 - Annotations are stored in a local store by default; whether they are committed in-repo vs. kept as CI metadata is an open question deferred to the DevOps lane.
-- `analyze-repo`, `analyze-ticket`, and `validate` are later lanes; this feature delivers the `score-file` path end-to-end plus the frozen contract every other lane builds on.
+- `init` / `score repo` (Lane 1), `score ticket` (Lane 2), and `validate ticket` (Lane 3) are later lanes; this feature delivers internal file scoring end-to-end plus the frozen contract every other lane builds on.
 - The reviewer-agent roles (Scout / Architect / Implementation / PM / Arbitrator) are the executors for LLM rules; their full multi-perspective implementation may be staged, but the contract and orchestration seam land here.

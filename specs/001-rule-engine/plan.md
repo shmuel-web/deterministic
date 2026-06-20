@@ -71,11 +71,12 @@ src/
 │       ├── intent-legibility.ts
 │       └── dod-quality.ts           # llm: quality of the Definition of Done
 ├── commands/
-│   ├── score-file.ts    # end-to-end file scoring + annotation write
-│   ├── analyze-repo.ts  # stub (Lane 1)
-│   ├── analyze-ticket.ts# stub (Lane 2)
-│   └── validate.ts      # stub (Lane 3)
-└── cli.ts               # arg dispatch
+│   ├── score-file.ts      # INTERNAL file scoring (atomic unit) + annotation write; hidden `file` dev cmd
+│   ├── init.ts            # `init` — expensive baseline: annotate every file (Lane 1)
+│   ├── score-repo.ts      # `score repo` — cheap incremental composer (Lane 1)
+│   ├── score-ticket.ts    # `score ticket` (Lane 2)
+│   └── validate-ticket.ts # `validate ticket` (Lane 3)
+└── cli.ts                 # `init` / `score repo|ticket` / `validate ticket`
 
 deterministic.config.ts  # rule registry + weights (per target)
 
