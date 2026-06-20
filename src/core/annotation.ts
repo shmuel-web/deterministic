@@ -25,8 +25,10 @@ function bodyLines(a: Annotation): string[] {
   for (const s of a.signals) {
     lines.push(`  ${s.ruleId}  ${s.score}/100  w${s.weight}  ${s.reasoning}`);
   }
+  // Surface a "next agent" hint only when something genuinely needs attention,
+  // so the hint stays actionable rather than echoing praise.
   const worst = [...a.signals].sort((x, y) => x.score - y.score)[0];
-  if (worst && worst.score < 100) lines.push(`  > next: ${worst.reasoning}`);
+  if (worst && worst.score < 70) lines.push(`  > next: ${worst.reasoning}`);
   lines.push(END);
   return lines;
 }

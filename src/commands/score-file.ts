@@ -4,6 +4,7 @@ import { runRules } from "../core/orchestrator.js";
 import { arbitrate } from "../core/arbitrator.js";
 import { writeAnnotation, stripAnnotation } from "../core/annotation.js";
 import { resolveModel } from "../core/model.js";
+import type { ModelClient } from "../core/rule.js";
 
 /**
  * Internal file scoring — the atomic unit `init`, `score repo`, and
@@ -12,13 +13,14 @@ import { resolveModel } from "../core/model.js";
  * annotation INTO the file, prints the auditable breakdown. Strips any prior
  * annotation before scoring so the annotation never skews a score (Principle IV).
  */
-export async function scoreFile(file?: string): Promise<void> {
+export async function scoreFile(file?: string, modelOverride?: ModelClient): Promise<void> {
   if (!file) throw new Error("usage: deterministic score-file <path>");
 
   const raw = await fs.readFile(file, "utf8");
   const content = stripAnnotation(raw); // never score our own annotation
 
-  const model = await resolveModel(); // null is fine for a static-only target; Orchestrator errors if an LLM rule needs it
+  // Tests inject a stub model; production resolves one (local Ollama → API → error if an LLM rule needs it).
+  const model = modelOverride ?? (await resolveModel());
   const signals = await runRules(rules, { target: "file", path: file, content }, { model: model ?? undefined });
   const { score } = arbitrate(signals);
 
