@@ -17,7 +17,7 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 
 - [ ] **T001** [SYNC] Initialize TypeScript project: `package.json` (ESM, `type:module`, bin `deterministic`, scripts dev/build/typecheck/test), `tsconfig.json` (NodeNext, strict), deps `zod`, devDeps `typescript`/`tsx`/`@types/node`.
 - [ ] **T002** [P] Create source tree: `src/core/`, `src/rules/static/`, `src/rules/llm/`, `src/commands/`, `tests/{contract,unit,integration}/`.
-- [ ] **T003** [P] Configure `node:test` + `tsx` test runner and a `pnpm test` script.
+- [ ] **T003** [P] Configure `node:test` + `tsx` test runner and an `npm test` script.
 
 ## Phase 2: Foundational — the Keystone (BLOCKS all user stories)
 
