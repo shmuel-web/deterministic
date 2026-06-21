@@ -1,3 +1,9 @@
+// @deterministic score: 93/100  scored: 2026-06-21T08:19:14.239Z
+//   static/file-length  100/100  w1  69 lines — within the 300-line soft cap.
+//   static/missing-types  100/100  w2  No `any` annotations.
+//   static/function-length  94/100  w1  Function findFunctions is 54 lines — 4 over the 50-line cap; consider extracting.
+//   llm/intent-legibility  85/100  w3  File intent is clear: it enforces a maximum line length for functions using heuristic brace matching, with descriptive naming and comments explaining its purpose and behavior.
+// @deterministic:end
 import type { Rule } from "../../core/rule.js";
 
 const SOFT_CAP = 50; // lines per function body
