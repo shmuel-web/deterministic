@@ -45,7 +45,7 @@ Local models emit flakier JSON than a frontier API.
 
 - **Language/runtime:** TypeScript, Node 18+, ESM (NodeNext).
 - **Agent orchestration:** Mastra.
-- **LLM (required):** default is a local model — Ollama serving **Qwen 3 Coder** at `localhost:11434`. Fallback is a user-provided LLM API (endpoint + key) when no local model is available. Used by LLM rules; static rules need no model.
+- **LLM (required):** default is a local model — Ollama serving **Gemma 4** (Google's open model; top-scoring open weights and efficient enough to run on modest hardware) at `localhost:11434`. Fallback is a user-provided LLM API (endpoint + key) when no local model is available. Used by LLM rules; static rules need no model.
 - **Validation:** Zod on every LLM rule output.
 - **Repo detection:** file-based.
 - **Observability:** Langfuse via OpenTelemetry.

@@ -52,7 +52,7 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 
 **Goal**: LLM rules run against a resolved model; no model → clear error. **Independent test**: with Ollama up an LLM rule contributes; with none configured the run errors.
 
-- [ ] **T017** [SYNC] [US2] Ollama `ModelClient` in `src/core/model.ts` (HTTP `generate`, model `qwen3-coder`); wire into `resolveModel()`.
+- [ ] **T017** [SYNC] [US2] Ollama `ModelClient` in `src/core/model.ts` (HTTP `generate`, model `gemma4`); wire into `resolveModel()`.
 - [ ] **T018** [P] [US2] [ASYNC] User-API `ModelClient` (endpoint + key) as the fallback path.
 - [ ] **T019** [US2] Wire `resolveModel()` into `score-file`/Orchestrator: LLM rules receive the model; fail fast with actionable message if none. (SC-004)
 - [ ] **T020** [P] [US2] [ASYNC] LLM rule `src/rules/llm/intent-legibility.ts` — prompt, Zod validate-and-retry, neutral on malformed. (Principle VI) Register in config.

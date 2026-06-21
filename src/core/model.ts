@@ -9,7 +9,7 @@ import type { ModelClient } from "./rule.js";
  */
 
 const OLLAMA_HOST = process.env.OLLAMA_HOST ?? "http://localhost:11434";
-const OLLAMA_MODEL = process.env.DETERMINISTIC_OLLAMA_MODEL ?? "qwen3-coder";
+const OLLAMA_MODEL = process.env.DETERMINISTIC_OLLAMA_MODEL ?? "gemma4";
 
 /** Ollama-backed client (local, no keys). */
 function ollamaClient(host: string, model: string): ModelClient {

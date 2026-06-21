@@ -5,12 +5,12 @@
 
 ## Summary
 
-Build the keystone of Deterministic: a frozen, language-agnostic **Rule contract**, a **model-resolution** step (local Ollama → user API → hard error), an **Orchestrator** that gathers applicable rules and runs static rules inline / routes LLM rules to reviewer agents, an **Arbitrator** that composes weighted signals into one auditable score, an **annotation store** that lets higher-level scores compose incrementally, a working **`score-file`** command, and a **starter rule set** (static + LLM, including the ticket Definition-of-Done pair). Everything runs locally; LLM rules use Qwen 3 Coder via Ollama.
+Build the keystone of Deterministic: a frozen, language-agnostic **Rule contract**, a **model-resolution** step (local Ollama → user API → hard error), an **Orchestrator** that gathers applicable rules and runs static rules inline / routes LLM rules to reviewer agents, an **Arbitrator** that composes weighted signals into one auditable score, an **annotation store** that lets higher-level scores compose incrementally, a working **`score-file`** command, and a **starter rule set** (static + LLM, including the ticket Definition-of-Done pair). Everything runs locally; LLM rules use Gemma 4 via Ollama.
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x, Node 18+ (dev on Node 24), ESM / NodeNext
-**Primary Dependencies**: Zod (schema validation), Mastra (agent orchestration for LLM rules), Ollama HTTP API (`localhost:11434`, model `qwen3-coder`); tsx for dev run
+**Primary Dependencies**: Zod (schema validation), Mastra (agent orchestration for LLM rules), Ollama HTTP API (`localhost:11434`, model `gemma4`); tsx for dev run
 **Storage**: In-file comment annotations in each file's native syntax (committed in-repo); `<name>.deterministic.md` sidecar fallback for comment-less formats (see research.md D2). The file is the source of truth.
 **Testing**: `node:test` + `tsx` for unit/contract tests; static rules are deterministic and unit-tested; the LLM path is contract-tested with a stubbed `ModelClient`
 **Target Platform**: Developer laptop (macOS/Linux), CLI, fully local
