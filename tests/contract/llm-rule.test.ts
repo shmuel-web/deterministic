@@ -30,3 +30,10 @@ test("malformed output → empty issues, never throws (Principle VI)", async () 
   assert.ok(RuleResultSchema.safeParse(out).success);
   assert.deepEqual(out.issues, []);
 });
+
+test("severity is capped to the rule's ceiling (legibility maxes at minor)", async () => {
+  const out = await intentLegibility.run(
+    ctx(stub('{"issues":[{"problem":"unclear name","fix":"rename it","severity":"critical"}]}')),
+  );
+  assert.equal(out.issues[0]!.severity, "minor", "an over-eager critical must be clamped to the rule's max");
+});

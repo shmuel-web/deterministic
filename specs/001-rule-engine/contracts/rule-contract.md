@@ -72,6 +72,32 @@ rule count and a serious issue dominates. No issues anywhere → 100.
 6. LLM rules MUST validate model output with Zod + retry; on failure return `{ issues: [] }` (never fabricate problems — Principle VI).
 7. A clean target returns `{ issues: [] }` — never a "100 + praise" signal. There is no praise channel.
 
+## LLM rules MUST be scoped (use `llmRule()`)
+
+An LLM rule judges **one concern and nothing else**. "Find issues in this file"
+is open-ended — an agreeable model always finds *something* (architecture,
+library swaps, refactors), which is noise. So LLM rules are built with the
+`llmRule({ topic, lookFor, maxSeverity })` scaffold (`src/core/llm-rule.ts`),
+which bakes the guardrails into the prompt:
+
+- report ONLY issues about the declared `topic`; never comment on anything else;
+- intentional stubs / TODOs are not issues;
+- every issue needs a concrete fix; if none, return `{ issues: [] }` — never invent, never praise;
+- severity is clamped to `maxSeverity` (judgment rules default to `minor`).
+
+```ts
+export const intentLegibility = llmRule({
+  id: "llm/intent-legibility",
+  target: "file",
+  description: "...",
+  topic: "intent legibility — judged ONLY from the clarity of names and doc comments",
+  lookFor: "- a misleading exported name\n- a missing doc comment on the main export\n- no statement of the file's purpose",
+  maxSeverity: "minor",
+});
+```
+
+Do NOT hand-write an open-ended LLM prompt. Declare a topic.
+
 ## Severity guidance for authors
 
 - **info** (−1): cosmetic / nit (a lazy variable name).
