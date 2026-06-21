@@ -46,25 +46,40 @@ What a rule receives.
 | `signals` | IdentifiedSignal[] | every contributing signal (audit trail) |
 | `scoredAt` | string | ISO 8601 timestamp |
 
-**Representation**: the annotation is serialized **into the scored file as a comment block** in the file's native comment syntax (see research.md D2), delimited by a `@deterministic` sentinel so it can be found and replaced idempotently. The same logical fields (score, signals, scoredAt) are rendered as comment lines. For comment-less formats (e.g. JSON) a sibling `<name>.deterministic.md` sidecar holds the block. The scorer strips this block from content before running rules. The file is the source of truth; re-scoring rewrites only that file's block.
+**Representation**: the annotation is serialized **into the scored file as a comment block** in the file's native comment syntax (see research.md D2), delimited by a `@deterministic` sentinel so it can be found and replaced idempotently. For comment-less formats (e.g. JSON) a sibling `<name>.deterministic.md` sidecar holds the block. The scorer strips this block from content before running rules. The file is the source of truth; re-scoring rewrites only that file's block.
+
+**Low-noise by design (the annotation is a punch-list, not a report):**
+- The composite **score** is always shown (the headline).
+- Only rules **with room to improve** (`score < 100`) are listed — each a thing the next agent can act on.
+- **Perfect rules collapse** into a single `(N rules passed)` line. This keeps the score auditable (Principle III — we don't hide that they ran) while preventing noise that would otherwise grow with every rule added.
+- A `> next:` hint is added only when the worst rule is genuinely low (`< 70`), so it stays actionable.
+- The interactive CLI output (transient) still prints the **full** per-rule breakdown — only the *persisted* annotation is trimmed.
 
 ## Concrete example — a TypeScript file, annotated in place
 
-After `score-file`, the block is written at the top of the file using `//` comments. The next agent that opens `orchestrator.ts` reads its standing and the hint before touching it:
+A file with one rule needing attention (the others pass):
 
 ```ts
-// ┌─ @deterministic ─ score: 76/100 ─ scored: 2026-06-19T11:53:25Z ──────────
-// │ static/file-length      55/100  w1  612 lines — over the 300 soft cap; split this module
-// │ static/missing-types    100/100 w2  No `any` annotations
-// │ static/coverage         40/100  w2  31% covered — add tests before extending
-// │ llm/intent-legibility   90/100  w3  Clear orchestration role
-// │ ▸ next agent: reduce length and raise coverage before adding to this file
-// └──────────────────────────────────────────────────────────────────────────
+// @deterministic score: 76/100  scored: 2026-06-19T11:53:25Z
+//   static/file-length  55/100  w1  612 lines — over the 300 soft cap; split this module
+//   static/coverage     40/100  w2  31% covered — add tests before extending
+//   (2 rules passed)
+//   > next: 31% covered — add tests before extending
+// @deterministic:end
 import { ... } from "...";
 // ...real source continues...
 ```
 
-Score `76` = weighted average of the signals shown. Every point is traceable to a rule — no black box (Principle III). On re-score, this exact block is located by the `@deterministic` sentinel and replaced; the scorer strips it first so `file-length` does not count these comment lines.
+A clean file shows almost nothing — just the score and the pass count:
+
+```ts
+// @deterministic score: 98/100  scored: 2026-06-21T11:46:02Z
+//   llm/intent-legibility  95/100  w3  Clear intent; types and docs make the role obvious
+//   (3 rules passed)
+// @deterministic:end
+```
+
+Score is the weighted average of **all** signals (passed ones included); only the *display* is trimmed. On re-score the block is located by the sentinel and replaced; the scorer strips it first so the rules never count the annotation's own lines.
 
 ## Concrete example — a ticket (Markdown), DoD pair (Principle II)
 

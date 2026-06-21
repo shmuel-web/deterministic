@@ -23,8 +23,11 @@ test("score-file writes an idempotent in-file annotation and is non-destructive"
 
   // annotation present and auditable
   assert.match(once, /@deterministic score:\s*\d+\/100/);
-  assert.match(once, /static\/file-length/);
-  assert.match(once, /static\/missing-types/);
+  // low-noise: only rules with room to improve are listed (the stubbed LLM rule
+  // scores 88), while perfect rules collapse into a "(N rules passed)" summary.
+  assert.match(once, /llm\/intent-legibility/);
+  assert.doesNotMatch(once, /static\/file-length/, "perfect rules must be omitted as noise");
+  assert.match(once, /\(\d+ rules? passed\)/);
 
   // stripping the annotation restores the original source exactly (self-stripping)
   assert.equal(stripAnnotation(once), original);

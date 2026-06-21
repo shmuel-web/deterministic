@@ -25,16 +25,30 @@ export interface Annotation {
 const START = "@deterministic";
 const END = "@deterministic:end";
 
-/** Body lines of the annotation, before comment-syntax wrapping. */
+/**
+ * Body lines of the annotation, before comment-syntax wrapping.
+ *
+ * Low-noise by design: only rules with room to improve (score < 100) are listed
+ * — a punch-list, not a full report. Perfect rules collapse into a single
+ * "(N rules passed)" summary so the score stays auditable (Principle III) without
+ * the noise that would grow with every added rule.
+ */
 function bodyLines(a: Annotation): string[] {
   const lines = [`${START} score: ${a.score}/100  scored: ${a.scoredAt}`];
-  for (const s of a.signals) {
+
+  const improvable = a.signals.filter((s) => s.score < 100);
+  const passed = a.signals.length - improvable.length;
+
+  for (const s of improvable) {
     lines.push(`  ${s.ruleId}  ${s.score}/100  w${s.weight}  ${s.reasoning}`);
   }
+  if (passed > 0) lines.push(`  (${passed} rule${passed === 1 ? "" : "s"} passed)`);
+
   // Surface a "next agent" hint only when something genuinely needs attention,
   // so the hint stays actionable rather than echoing praise.
-  const worst = [...a.signals].sort((x, y) => x.score - y.score)[0];
+  const worst = [...improvable].sort((x, y) => x.score - y.score)[0];
   if (worst && worst.score < 70) lines.push(`  > next: ${worst.reasoning}`);
+
   lines.push(END);
   return lines;
 }
