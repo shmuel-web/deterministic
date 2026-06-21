@@ -1,39 +1,57 @@
 import { promises as fs } from "node:fs";
 import { rules } from "../../deterministic.config.js";
 import { runRules } from "../core/orchestrator.js";
-import { score as scoreIssues } from "../core/score.js";
+import { score as scoreIssues, type IdentifiedIssue } from "../core/score.js";
 import { writeAnnotation, stripAnnotation } from "../core/annotation.js";
-import { resolveModel } from "../core/model.js";
+import { resolveModel, withConcurrencyLimit } from "../core/model.js";
+import { createLimiter, defaultConcurrency } from "../core/pool.js";
 import type { ModelClient } from "../core/rule.js";
 
+export interface FileScore {
+  path: string;
+  score: number;
+  issues: IdentifiedIssue[];
+}
+
 /**
- * Internal file scoring — the atomic unit `init`, `score repo`, and
- * `validate ticket` compose. NOT a public command (exposed only as the hidden
- * `deterministic file <path>` for dev/dogfooding). Pools the issues every rule
- * finds, derives the score (100 − penalties), writes the issue list into the
- * file, and prints the full breakdown. Strips any prior annotation before
- * scoring so it never skews the result (Principle IV).
+ * Score ONE file end-to-end (the atomic unit `init` / `score repo` / `validate`
+ * compose). Strips any prior annotation before scoring so it never skews the
+ * result, runs the rules, derives the score, and writes the issue list back into
+ * the file. Takes an already-resolved model so callers can share one across files.
  */
-export async function scoreFile(file?: string, modelOverride?: ModelClient): Promise<void> {
-  if (!file) throw new Error("usage: deterministic file <path>");
-
+export async function scoreOneFile(file: string, model: ModelClient | null): Promise<FileScore> {
   const raw = await fs.readFile(file, "utf8");
-  const content = stripAnnotation(raw); // never score our own annotation
-
-  // Tests inject a stub model; production resolves one (local Ollama → API → error if an LLM rule needs it).
-  const model = modelOverride ?? (await resolveModel());
+  const content = stripAnnotation(raw);
   const issues = await runRules(rules, { target: "file", path: file, content }, { model: model ?? undefined });
   const { score } = scoreIssues(issues);
-
   await writeAnnotation({ target: "file", path: file, score, issues });
+  return { path: file, score, issues };
+}
 
-  console.log(`\n  ${file}  →  ${score}/100`);
-  if (issues.length === 0) {
-    console.log("   ✓ no issues\n");
+function print(r: FileScore): void {
+  console.log(`\n  ${r.path}  →  ${r.score}/100`);
+  if (r.issues.length === 0) {
+    console.log("   ✓ no issues");
     return;
   }
-  for (const i of issues) {
-    console.log(`   • [${i.severity}] ${i.ruleId}  ${i.problem} → ${i.fix}`);
-  }
+  for (const i of r.issues) console.log(`   • [${i.severity}] ${i.ruleId}  ${i.problem} → ${i.fix}`);
+}
+
+/**
+ * Hidden `deterministic file <path...>` dev command. Scores one or many files,
+ * fanning out across files with a single shared concurrency limiter so in-flight
+ * LLM calls never exceed the cap (issue #63). Tests inject a stub model.
+ */
+export async function scoreFile(paths?: string | string[], modelOverride?: ModelClient): Promise<void> {
+  const files = (Array.isArray(paths) ? paths : paths ? [paths] : []).filter(Boolean);
+  if (files.length === 0) throw new Error("usage: deterministic file <path...>");
+
+  const base = modelOverride ?? (await resolveModel());
+  // One limiter shared across every file and rule → a single global LLM cap.
+  const limit = createLimiter(defaultConcurrency());
+  const model = base ? withConcurrencyLimit(base, limit) : null;
+
+  const results = await Promise.all(files.map((f) => scoreOneFile(f, model)));
+  for (const r of results) print(r);
   console.log("");
 }

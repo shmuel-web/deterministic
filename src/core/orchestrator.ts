@@ -29,21 +29,25 @@ export async function runRules(
     );
   }
 
-  const issues: IdentifiedIssue[] = [];
-  for (const rule of applicable) {
-    let raw;
-    try {
-      raw = await rule.run({ ...ctx, model: rule.type === "llm" ? options.model : undefined });
-    } catch (err) {
-      console.warn(`  ! rule ${rule.id} threw and was skipped: ${(err as Error).message}`);
-      continue;
-    }
-    const parsed = RuleResultSchema.safeParse(raw);
-    if (!parsed.success) {
-      console.warn(`  ! rule ${rule.id} produced an invalid result: ${parsed.error.message}`);
-      continue;
-    }
-    for (const issue of parsed.data.issues) issues.push({ ...issue, ruleId: rule.id });
-  }
-  return issues;
+  // Run rules concurrently; the model is concurrency-limited upstream, so this
+  // can't exceed the global LLM cap. Promise.all preserves order, and the score
+  // is a penalty sum (order-independent), so results stay deterministic.
+  const perRule = await Promise.all(
+    applicable.map(async (rule): Promise<IdentifiedIssue[]> => {
+      let raw;
+      try {
+        raw = await rule.run({ ...ctx, model: rule.type === "llm" ? options.model : undefined });
+      } catch (err) {
+        console.warn(`  ! rule ${rule.id} threw and was skipped: ${(err as Error).message}`);
+        return [];
+      }
+      const parsed = RuleResultSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.warn(`  ! rule ${rule.id} produced an invalid result: ${parsed.error.message}`);
+        return [];
+      }
+      return parsed.data.issues.map((issue) => ({ ...issue, ruleId: rule.id }));
+    }),
+  );
+  return perRule.flat();
 }

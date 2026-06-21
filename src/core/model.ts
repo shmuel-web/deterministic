@@ -1,4 +1,5 @@
 import type { ModelClient } from "./rule.js";
+import type { Limit } from "./pool.js";
 
 /**
  * Model resolution (constitution Principle V): local-first, but an LLM is
@@ -50,6 +51,11 @@ async function ollamaReachable(host: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** Wrap a model so every `complete()` call passes through the concurrency limiter. */
+export function withConcurrencyLimit(model: ModelClient, limit: Limit): ModelClient {
+  return { complete: (prompt) => limit(() => model.complete(prompt)) };
 }
 
 /** Resolve a model client, or null if none is available. */
