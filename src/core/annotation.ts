@@ -42,15 +42,28 @@ export function renderBlock(a: Annotation, style: CommentStyle): string {
   return [`${style.open} ${body[0]}`, ...body.slice(1, -1), `${body[body.length - 1]} ${style.close}`].join("\n");
 }
 
-/** Remove any existing `@deterministic` block from content (idempotency + strip-before-score). */
+// Our block's first line always starts (after optional indent) with a comment
+// marker immediately followed by the sentinel — e.g. `// @deterministic ...`,
+// `# @deterministic ...`, `/* @deterministic ...`, `<!-- @deterministic ...`.
+// Source code that merely mentions "@deterministic" (this module, docs, tests)
+// never matches, so it is never corrupted.
+const BLOCK_START = new RegExp(`^\\s*(//|#|--|/\\*|<!--)\\s*${START}\\b`);
+
+/**
+ * Remove our annotation block (idempotency + strip-before-score).
+ * We only ever WRITE the block at the top of the file (after an optional
+ * shebang), so we only ever strip it there.
+ */
 export function stripAnnotation(content: string): string {
   const lines = content.split("\n");
-  const start = lines.findIndex((l) => l.includes(START) && !l.includes(END));
-  if (start === -1) return content;
-  let end = lines.findIndex((l, i) => i >= start && l.includes(END));
-  if (end === -1) end = start;
-  // also drop a single trailing blank line left behind
-  if (lines[end + 1] === "") end += 1;
+  const start = lines[0]?.startsWith("#!") ? 1 : 0; // skip a leading shebang
+  if (!lines[start] || !BLOCK_START.test(lines[start]!)) {
+    return content; // no annotation block at the top — nothing of ours to strip
+  }
+  let end = start;
+  while (end < lines.length && !lines[end]!.includes(END)) end++;
+  if (end >= lines.length) return content; // unterminated; leave content untouched
+  if (lines[end + 1] === "") end += 1; // drop one trailing blank line we inserted
   lines.splice(start, end - start + 1);
   return lines.join("\n");
 }
