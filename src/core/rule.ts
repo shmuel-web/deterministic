@@ -1,25 +1,39 @@
-// @deterministic score: 100/100  scored: 2026-06-21T12:00:48.970Z
-//   (4 rules passed)
-// @deterministic:end
 import { z } from "zod";
 
 /**
- * THE RULE CONTRACT — the frozen keystone (constitution Principle I).
- * Changing this shape is a MAJOR governance event. Keep it language-agnostic:
- * any TypeScript-specific logic lives INSIDE individual rules, never here.
- * See specs/001-rule-engine/contracts/rule-contract.md.
+ * THE RULE CONTRACT v2 — the frozen keystone (constitution Principle I).
+ *
+ * A rule does NOT return a score. It returns the **issues** it found, each with a
+ * concrete `fix` and a `severity`. The engine derives the file score by
+ * subtracting each issue's penalty from 100. This makes praise structurally
+ * impossible: no issues → 100; every point lost maps to a named, fixable problem.
+ *
+ * Keep this contract language-agnostic — TypeScript-specific logic lives INSIDE
+ * individual rules, never here. See specs/001-rule-engine/contracts/rule-contract.md.
  */
 
 export type RuleTarget = "file" | "repo" | "ticket";
 export type RuleType = "static" | "llm";
 
-/** The validated output every rule returns — the audit atom (Principle III). */
-export const RuleSignalSchema = z.object({
-  score: z.number().min(0).max(100),
-  weight: z.number().min(0),
-  reasoning: z.string().min(1),
+/** Issue severity → penalty, on a clean 3× geometric scale. */
+export type Severity = "info" | "minor" | "major" | "critical";
+export const PENALTY: Record<Severity, number> = { info: 1, minor: 3, major: 9, critical: 27 };
+
+/** A single, actionable finding — the unit a rule speaks in (Principle III). */
+export const RuleIssueSchema = z.object({
+  /** What's wrong — include specifics (counts, line numbers, the offending name). */
+  problem: z.string().min(1),
+  /** The concrete change that resolves it. If you can't name a fix, it isn't a real issue. */
+  fix: z.string().min(1),
+  severity: z.enum(["info", "minor", "major", "critical"]),
 });
-export type RuleSignal = z.infer<typeof RuleSignalSchema>;
+export type RuleIssue = z.infer<typeof RuleIssueSchema>;
+
+/** What every rule returns. Empty issues ⟺ a clean pass. No score, no weight. */
+export const RuleResultSchema = z.object({
+  issues: z.array(RuleIssueSchema),
+});
+export type RuleResult = z.infer<typeof RuleResultSchema>;
 
 /** Minimal LLM client. Implemented by the Ollama/API backends (see model.ts). */
 export interface ModelClient {
@@ -40,5 +54,5 @@ export interface Rule {
   target: RuleTarget;
   type: RuleType;
   description?: string;
-  run(context: RuleContext): RuleSignal | Promise<RuleSignal>;
+  run(context: RuleContext): RuleResult | Promise<RuleResult>;
 }

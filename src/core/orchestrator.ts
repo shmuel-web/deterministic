@@ -1,16 +1,6 @@
-// @deterministic score: 100/100  scored: 2026-06-21T12:00:31.797Z
-//   (4 rules passed)
-// @deterministic:end
 import type { ModelClient, Rule, RuleContext } from "./rule.js";
-import { RuleSignalSchema } from "./rule.js";
-import type { IdentifiedSignal } from "./arbitrator.js";
-
-/** A rule plus the weight a project assigns it (see deterministic.config.ts). */
-export interface ConfiguredRule {
-  rule: Rule;
-  /** Overrides the rule's self-reported weight when present. */
-  weight?: number;
-}
+import { RuleResultSchema } from "./rule.js";
+import type { IdentifiedIssue } from "./score.js";
 
 export interface RunOptions {
   /** Resolved model for LLM rules. Required if any applicable rule is `llm` (Principle V). */
@@ -19,29 +9,28 @@ export interface RunOptions {
 
 /**
  * The Orchestrator: gather the rules applicable to a target, run static rules
- * inline and LLM rules against the resolved model, validate each output against
- * the contract, and collect identified signals. A throwing rule is isolated —
- * it must not poison the whole score (FR-002).
+ * inline and LLM rules against the resolved model, validate each result against
+ * the contract, and pool every issue (tagged with its rule). A throwing or
+ * malformed rule is isolated — it must not poison the rest (FR-002).
  */
 export async function runRules(
-  configured: ConfiguredRule[],
+  rules: Rule[],
   ctx: Omit<RuleContext, "model">,
   options: RunOptions = {},
-): Promise<IdentifiedSignal[]> {
-  const applicable = configured.filter((c) => c.rule.target === ctx.target);
+): Promise<IdentifiedIssue[]> {
+  const applicable = rules.filter((r) => r.target === ctx.target);
 
   // Principle V: judgment is never silently skipped. If an LLM rule applies and
   // no model was resolved, that is an error — not a degraded pass.
-  const needsModel = applicable.some((c) => c.rule.type === "llm");
-  if (needsModel && !options.model) {
+  if (applicable.some((r) => r.type === "llm") && !options.model) {
     throw new Error(
       "No LLM configured but this target has LLM rules. Start Ollama (localhost:11434) " +
         "or set DETERMINISTIC_LLM_API_URL + DETERMINISTIC_LLM_API_KEY.",
     );
   }
 
-  const signals: IdentifiedSignal[] = [];
-  for (const { rule, weight } of applicable) {
+  const issues: IdentifiedIssue[] = [];
+  for (const rule of applicable) {
     let raw;
     try {
       raw = await rule.run({ ...ctx, model: rule.type === "llm" ? options.model : undefined });
@@ -49,12 +38,12 @@ export async function runRules(
       console.warn(`  ! rule ${rule.id} threw and was skipped: ${(err as Error).message}`);
       continue;
     }
-    const parsed = RuleSignalSchema.safeParse(raw);
+    const parsed = RuleResultSchema.safeParse(raw);
     if (!parsed.success) {
-      console.warn(`  ! rule ${rule.id} produced an invalid signal: ${parsed.error.message}`);
+      console.warn(`  ! rule ${rule.id} produced an invalid result: ${parsed.error.message}`);
       continue;
     }
-    signals.push({ ...parsed.data, weight: weight ?? parsed.data.weight, ruleId: rule.id });
+    for (const issue of parsed.data.issues) issues.push({ ...issue, ruleId: rule.id });
   }
-  return signals;
+  return issues;
 }

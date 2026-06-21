@@ -1,24 +1,19 @@
-// @deterministic score: 100/100  scored: 2026-06-21T11:57:46.954Z
-//   (4 rules passed)
-// @deterministic:end
-import type { ConfiguredRule } from "./src/core/orchestrator.js";
+import type { Rule } from "./src/core/rule.js";
 import { fileLength } from "./src/rules/static/file-length.js";
 import { missingTypes } from "./src/rules/static/missing-types.js";
 import { functionLength } from "./src/rules/static/function-length.js";
 import { intentLegibility } from "./src/rules/llm/intent-legibility.js";
 
 /**
- * Project configuration: which rules run, and at what weight (ESLint-style).
- * Config weight overrides a rule's self-reported weight.
+ * Project configuration: which rules run (ESLint-style).
  *
- * Remaining starter rules are the team's [ASYNC] tickets against the frozen
- * contract: static/ticket-has-dod (#24) + llm/dod-quality (#25).
+ * Importance now lives in each issue's `severity`, not a per-rule weight — so the
+ * registry is just the enabled rule list. Remaining starter rules are the team's
+ * tickets against the frozen contract: static/ticket-has-dod (#24), llm/dod-quality (#25).
  */
-export const rules: ConfiguredRule[] = [
-  // file target — static
-  { rule: fileLength, weight: 1 },
-  { rule: missingTypes, weight: 2 },
-  { rule: functionLength, weight: 1 },
-  // file target — llm (judgment)
-  { rule: intentLegibility, weight: 3 },
+export const rules: Rule[] = [
+  fileLength,
+  missingTypes,
+  functionLength,
+  intentLegibility,
 ];

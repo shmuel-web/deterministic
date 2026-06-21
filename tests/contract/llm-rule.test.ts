@@ -1,25 +1,32 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { intentLegibility } from "../../src/rules/llm/intent-legibility.js";
-import { RuleSignalSchema, type ModelClient } from "../../src/core/rule.js";
+import { RuleResultSchema, type ModelClient } from "../../src/core/rule.js";
 
 const stub = (response: string): ModelClient => ({ complete: async () => response });
 const ctx = (model: ModelClient) => ({ target: "file" as const, path: "x.ts", content: "const x = 1;", model });
 
-test("valid model JSON → contract-valid signal", async () => {
-  const out = await intentLegibility.run(ctx(stub('{"score": 82, "reasoning": "clear intent"}')));
-  assert.ok(RuleSignalSchema.safeParse(out).success);
-  assert.equal(out.score, 82);
+test("model issues JSON → contract-valid result", async () => {
+  const out = await intentLegibility.run(
+    ctx(stub('{"issues":[{"problem":"vague name `d`","fix":"rename to `dashboard`","severity":"minor"}]}')),
+  );
+  assert.ok(RuleResultSchema.safeParse(out).success);
+  assert.equal(out.issues.length, 1);
+  assert.equal(out.issues[0]!.severity, "minor");
 });
 
-test("JSON wrapped in chatter is still parsed", async () => {
-  const out = await intentLegibility.run(ctx(stub('Sure!\n{"score": 70, "reasoning": "ok"}\nThanks')));
-  assert.equal(out.score, 70);
+test("clean file → empty issues (no fabricated problems, no praise)", async () => {
+  const out = await intentLegibility.run(ctx(stub('{"issues": []}')));
+  assert.deepEqual(out.issues, []);
 });
 
-test("malformed output → neutral signal, never throws (Principle VI)", async () => {
+test("issues wrapped in chatter are still parsed", async () => {
+  const out = await intentLegibility.run(ctx(stub('Sure:\n{"issues":[{"problem":"p","fix":"f","severity":"info"}]}\ndone')));
+  assert.equal(out.issues.length, 1);
+});
+
+test("malformed output → empty issues, never throws (Principle VI)", async () => {
   const out = await intentLegibility.run(ctx(stub("not json at all")));
-  assert.ok(RuleSignalSchema.safeParse(out).success);
-  assert.equal(out.score, 50);
-  assert.match(out.reasoning, /unparseable/);
+  assert.ok(RuleResultSchema.safeParse(out).success);
+  assert.deepEqual(out.issues, []);
 });

@@ -1,9 +1,4 @@
-// @deterministic score: 95/100  scored: 2026-06-21T12:01:27.508Z
-//   static/function-length  94/100  w1  Function findFunctions is 54 lines — 4 over the 50-line cap; consider extracting.
-//   llm/intent-legibility  90/100  w3  The purpose as a static linter rule is extremely clear, but the core function for brace-delimited function detection (`findFunctions`) is algorithmically complex and difficult to safely modify without deep understanding.
-//   (2 rules passed)
-// @deterministic:end
-import type { Rule } from "../../core/rule.js";
+import type { Rule, RuleIssue } from "../../core/rule.js";
 
 const SOFT_CAP = 50; // lines per function body
 
@@ -53,21 +48,18 @@ export const functionLength: Rule = {
   id: "static/function-length",
   target: "file",
   type: "static",
-  description: `Penalizes functions longer than ~${SOFT_CAP} lines.`,
+  description: `Flags functions longer than ~${SOFT_CAP} lines.`,
   run({ content }) {
-    const fns = findFunctions(content ?? "");
-    if (fns.length === 0) {
-      return { score: 100, weight: 1, reasoning: "No brace-delimited functions detected — rule inert." };
+    const issues: RuleIssue[] = [];
+    for (const fn of findFunctions(content ?? "")) {
+      const over = fn.lines - SOFT_CAP;
+      if (over <= 0) continue;
+      issues.push({
+        problem: `function ${fn.name} is ${fn.lines} lines — ${over} over the ${SOFT_CAP}-line cap`,
+        fix: "extract cohesive steps into smaller helper functions",
+        severity: over > 100 ? "major" : over > 30 ? "minor" : "info",
+      });
     }
-    const worst = fns.reduce((a, b) => (b.lines > a.lines ? b : a));
-    const over = Math.max(0, worst.lines - SOFT_CAP);
-    return {
-      score: Math.max(0, Math.round(100 - over * 1.5)),
-      weight: 1,
-      reasoning:
-        over === 0
-          ? `Longest function (${worst.name}) is ${worst.lines} lines — within the ${SOFT_CAP}-line cap.`
-          : `Function ${worst.name} is ${worst.lines} lines — ${over} over the ${SOFT_CAP}-line cap; consider extracting.`,
-    };
+    return { issues };
   },
 };
