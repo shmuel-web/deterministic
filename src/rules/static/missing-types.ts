@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] static/missing-types  `any` annotation erases type safety → replace `any` with a concrete type
+// @deterministic:end
 import type { Rule, RuleIssue } from "../../core/rule.js";
 
 /** Static: every `: any` is a hole in the type system. Inert on non-TS files. */

@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 /**
  * `deterministic init` — the expensive first run: score and annotate EVERY file
  * in the repo and establish the baseline repo score. O(whole repo); run once.

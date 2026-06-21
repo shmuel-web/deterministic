@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 import type { ModelClient, Rule, RuleContext } from "./rule.js";
 import { RuleResultSchema } from "./rule.js";
 import type { IdentifiedIssue } from "./score.js";

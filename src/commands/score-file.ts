@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import { rules } from "../../deterministic.config.js";
 import { runRules } from "../core/orchestrator.js";

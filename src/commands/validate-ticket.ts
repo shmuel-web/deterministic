@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 /**
  * `deterministic validate ticket <path>` — the loop closer. After the agent does
  * the work: run the project's tests/lint/types/etc. AND re-score the touched

@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 /**
  * `deterministic score ticket <path>` — score a ticket: is it well-specified
  * enough to act on, and how complex (resolve its blast radius, inherit the
