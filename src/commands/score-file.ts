@@ -1,3 +1,9 @@
+// @deterministic score: 94/100  scored: 2026-06-21T08:18:47.420Z
+//   static/file-length  100/100  w1  41 lines — within the 300-line soft cap.
+//   static/missing-types  100/100  w2  No `any` annotations.
+//   static/function-length  100/100  w1  Longest function (scoreFile) is 25 lines — within the 50-line cap.
+//   llm/intent-legibility  85/100  w3  File name and function clearly indicate it scores individual files using rules and models, with audit-friendly annotations, though the hidden command exposure and internal-only use hint at a developer-focused tool rather than general user intent.
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import { rules } from "../../deterministic.config.js";
 import { runRules } from "../core/orchestrator.js";

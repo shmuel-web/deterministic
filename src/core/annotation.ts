@@ -1,3 +1,9 @@
+// @deterministic score: 94/100  scored: 2026-06-21T08:18:55.439Z
+//   static/file-length  100/100  w1  96 lines — within the 300-line soft cap.
+//   static/missing-types  100/100  w2  No `any` annotations.
+//   static/function-length  100/100  w1  Longest function (stripAnnotation) is 13 lines — within the 50-line cap.
+//   llm/intent-legibility  85/100  w3  The file's purpose as a deterministic annotation system for AI agents is clear from naming, structure, and comments, though the specific use case could be made more explicit in documentation.
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import type { RuleTarget } from "./rule.js";
 import type { IdentifiedSignal } from "./arbitrator.js";

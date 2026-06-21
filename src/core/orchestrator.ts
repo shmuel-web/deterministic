@@ -1,3 +1,9 @@
+// @deterministic score: 96/100  scored: 2026-06-21T08:19:05.436Z
+//   static/file-length  100/100  w1  58 lines — within the 300-line soft cap.
+//   static/missing-types  100/100  w2  No `any` annotations.
+//   static/function-length  100/100  w1  Longest function (for) is 15 lines — within the 50-line cap.
+//   llm/intent-legibility  90/100  w3  The file's purpose as a rule execution orchestrator is clear from the name, comments, and function signature; naming conventions are consistent and descriptive, though some context like 'Principle V' could be better documented.
+// @deterministic:end
 import type { ModelClient, Rule, RuleContext } from "./rule.js";
 import { RuleSignalSchema } from "./rule.js";
 import type { IdentifiedSignal } from "./arbitrator.js";

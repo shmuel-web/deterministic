@@ -1,3 +1,9 @@
+// @deterministic score: 96/100  scored: 2026-06-21T08:19:00.181Z
+//   static/file-length  100/100  w1  35 lines — within the 300-line soft cap.
+//   static/missing-types  100/100  w2  No `any` annotations.
+//   static/function-length  100/100  w1  Longest function (getCommentStyle) is 3 lines — within the 50-line cap.
+//   llm/intent-legibility  90/100  w3  The file's purpose is clear from its name and type definitions — it determines comment styles by file extension — with excellent documentation and predictable structure.
+// @deterministic:end
 import path from "node:path";
 
 /** How a file expresses comments — line-prefixed or block-delimited. */
