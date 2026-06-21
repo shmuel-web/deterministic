@@ -1,8 +1,6 @@
-// @deterministic score: 98/100  scored: 2026-06-21T08:19:11.655Z
-//   static/file-length  100/100  w1  24 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (run) is 12 lines — within the 50-line cap.
-//   llm/intent-legibility  95/100  w3  Clear intent: this is a static analysis rule that penalizes files exceeding 300 lines, with obvious naming, structure, and purpose.
+// @deterministic score: 99/100  scored: 2026-06-21T12:01:18.546Z
+//   llm/intent-legibility  98/100  w3  The file name, directory structure, and dedicated doc blocks make its purpose (defining a static linter rule) immediately obvious.
+//   (3 rules passed)
 // @deterministic:end
 import type { Rule } from "../../core/rule.js";
 

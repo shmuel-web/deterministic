@@ -1,8 +1,6 @@
-// @deterministic score: 94/100  scored: 2026-06-21T08:19:09.960Z
-//   static/file-length  100/100  w1  68 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (run) is 11 lines — within the 50-line cap.
-//   llm/intent-legibility  85/100  w3  The file's purpose is clear from its name and docstring as an LLM-based rule to evaluate intent legibility of source files, with well-defined structure, scoring, and error handling.
+// @deterministic score: 99/100  scored: 2026-06-21T12:01:08.404Z
+//   llm/intent-legibility  98/100  w3  The file is exceptionally well-structured, highly modularized with clear helpers for LLM interaction, and includes excellent defensive coding practices.
+//   (3 rules passed)
 // @deterministic:end
 import { z } from "zod";
 import type { Rule, ModelClient } from "../../core/rule.js";

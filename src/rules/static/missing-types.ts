@@ -1,8 +1,7 @@
-// @deterministic score: 94/100  scored: 2026-06-21T08:19:15.902Z
-//   static/file-length  100/100  w1  21 lines — within the 300-line soft cap.
+// @deterministic score: 95/100  scored: 2026-06-21T12:01:42.729Z
 //   static/missing-types  85/100  w2  1 `any` annotation(s) — each erases type safety.
-//   static/function-length  100/100  w1  Longest function (run) is 11 lines — within the 50-line cap.
-//   llm/intent-legibility  95/100  w3  Clear naming, obvious purpose, and well-documented rule that penalizes 'any' types in TS files with understandable scoring logic.
+//   llm/intent-legibility  98/100  w3  The file's name, explicit module structure, and detailed comments immediately clarify that its sole purpose is implementing a type safety rule for `any`.
+//   (2 rules passed)
 // @deterministic:end
 import type { Rule } from "../../core/rule.js";
 

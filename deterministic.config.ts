@@ -1,8 +1,5 @@
-// @deterministic score: 94/100  scored: 2026-06-21T08:18:41.411Z
-//   static/file-length  100/100  w1  22 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  No brace-delimited functions detected — rule inert.
-//   llm/intent-legibility  85/100  w3  File name clearly indicates deterministic configuration, imports are well-organized with clear rule categories, comments explain the purpose and structure effectively, though some team-specific references could be more universally understandable.
+// @deterministic score: 100/100  scored: 2026-06-21T11:57:46.954Z
+//   (4 rules passed)
 // @deterministic:end
 import type { ConfiguredRule } from "./src/core/orchestrator.js";
 import { fileLength } from "./src/rules/static/file-length.js";
