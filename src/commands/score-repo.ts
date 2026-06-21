@@ -1,7 +1,3 @@
-// @deterministic score: 99/100  scored: 2026-06-21T11:58:43.849Z
-//   llm/intent-legibility  98/100  w3  The detailed JSDoc provides crystal-clear intent by explaining the precise function, necessary prerequisites (init), and underlying performance requirements.
-//   (3 rules passed)
-// @deterministic:end
 /**
  * `deterministic score repo` — the cheap, performant repo score: compose from
  * the in-file annotations `init` wrote, re-scoring only changed files. No

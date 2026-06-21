@@ -1,7 +1,3 @@
-// @deterministic score: 99/100  scored: 2026-06-21T12:00:15.190Z
-//   llm/intent-legibility  98/100  w3  The code uses exceptional modularity, clear function naming, and detailed JSDoc comments to explicitly document the fallback logic flow.
-//   (3 rules passed)
-// @deterministic:end
 import type { ModelClient } from "./rule.js";
 
 /**

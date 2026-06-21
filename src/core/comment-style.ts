@@ -1,7 +1,3 @@
-// @deterministic score: 99/100  scored: 2026-06-21T11:59:56.840Z
-//   llm/intent-legibility  98/100  w3  The purpose is crystal-clear through descriptive naming, explicit types, and limited scope.
-//   (3 rules passed)
-// @deterministic:end
 import path from "node:path";
 
 /** How a file expresses comments — line-prefixed or block-delimited. */

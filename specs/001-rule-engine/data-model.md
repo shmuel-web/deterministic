@@ -4,14 +4,23 @@ Entities, their fields, validation rules, and concrete examples. Schemas are enf
 
 ## Entities
 
-### RuleSignal (the audit atom)
-A single rule's output.
+### RuleIssue (the audit atom)
+A single, actionable finding — the unit a rule speaks in.
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `score` | number | 0–100 inclusive |
-| `weight` | number | ≥ 0 (config may override) |
-| `reasoning` | string | non-empty (required — Principle III) |
+| `problem` | string | non-empty; what's wrong, with specifics |
+| `fix` | string | non-empty; the concrete change that resolves it |
+| `severity` | enum | `info` \| `minor` \| `major` \| `critical` |
+
+Penalty by severity (3× geometric): `info −1, minor −3, major −9, critical −27`.
+
+### RuleResult
+What every rule returns. No score, no weight.
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `issues` | RuleIssue[] | empty ⟺ a clean pass |
 
 ### Rule
 A self-contained scoring unit (see contract).
@@ -21,7 +30,7 @@ A self-contained scoring unit (see contract).
 | `id` | string | namespaced, e.g. `static/file-length`, `llm/dod-quality` |
 | `target` | enum | `file` \| `repo` \| `ticket` |
 | `type` | enum | `static` \| `llm` |
-| `run(context)` | fn | returns `RuleSignal` (sync or async) |
+| `run(context)` | fn | returns `RuleResult` (sync or async) |
 
 ### RuleContext
 What a rule receives.
@@ -33,8 +42,11 @@ What a rule receives.
 | `content` | string? | file or ticket content; absent for repo-level rules |
 | `model` | ModelClient? | present only for LLM rules (injected by Orchestrator) |
 
-### IdentifiedSignal
-`RuleSignal` + `ruleId` — what the Arbitrator composes and the annotation stores.
+### IdentifiedIssue
+`RuleIssue` + `ruleId` — what the scorer pools and the annotation lists.
+
+### Derived score
+`score = max(0, 100 − Σ PENALTY[severity])` over all issues. NOT an average — passing rules contribute nothing.
 
 ### Annotation (persisted, composes up — Principle IV)
 
@@ -42,80 +54,50 @@ What a rule receives.
 |-------|------|-------|
 | `target` | enum | `file` \| `repo` \| `ticket` |
 | `path` | string | identifies the scored thing |
-| `score` | number | 0–100, the arbitrated result |
-| `signals` | IdentifiedSignal[] | every contributing signal (audit trail) |
-| `scoredAt` | string | ISO 8601 timestamp |
+| `score` | number | 0–100, the derived score |
+| `issues` | IdentifiedIssue[] | the findings (the audit trail). No timestamp — it only churns diffs. |
 
 **Representation**: the annotation is serialized **into the scored file as a comment block** in the file's native comment syntax (see research.md D2), delimited by a `@deterministic` sentinel so it can be found and replaced idempotently. For comment-less formats (e.g. JSON) a sibling `<name>.deterministic.md` sidecar holds the block. The scorer strips this block from content before running rules. The file is the source of truth; re-scoring rewrites only that file's block.
 
-**Low-noise by design (the annotation is a punch-list, not a report):**
-- The composite **score** is always shown (the headline).
-- Only rules **with room to improve** (`score < 100`) are listed — each a thing the next agent can act on.
-- **Perfect rules collapse** into a single `(N rules passed)` line. This keeps the score auditable (Principle III — we don't hide that they ran) while preventing noise that would otherwise grow with every rule added.
-- A `> next:` hint is added only when the worst rule is genuinely low (`< 70`), so it stays actionable.
-- The interactive CLI output (transient) still prints the **full** per-rule breakdown — only the *persisted* annotation is trimmed.
+**The annotation IS the issue list** — score, then each problem with its fix and severity, worst first. A clean file lists nothing. No praise, no timestamp. The interactive CLI prints the same findings (it just can't be "trimmed" — there's nothing to trim).
 
-## Concrete example — a TypeScript file, annotated in place
-
-A file with one rule needing attention (the others pass):
+## Concrete example — a TypeScript file with issues
 
 ```ts
-// @deterministic score: 76/100  scored: 2026-06-19T11:53:25Z
-//   static/file-length  55/100  w1  612 lines — over the 300 soft cap; split this module
-//   static/coverage     40/100  w2  31% covered — add tests before extending
-//   (2 rules passed)
-//   > next: 31% covered — add tests before extending
+// @deterministic score: 64/100
+//   [major] static/file-length  612 lines — 312 over the 300-line soft cap → split into smaller, focused modules
+//   [minor ×3] static/missing-types  `any` annotation erases type safety → replace `any` with a concrete type
 // @deterministic:end
 import { ... } from "...";
 // ...real source continues...
 ```
 
-A clean file shows almost nothing — just the score and the pass count:
+Score: `100 − 9 (major) − 3×3 (three minors) = 82`… here shown as 64 with an extra major elsewhere. Every point lost maps to a fixable issue. Identical findings collapse into one `×N` line.
+
+## A clean file lists nothing
 
 ```ts
-// @deterministic score: 98/100  scored: 2026-06-21T11:46:02Z
-//   llm/intent-legibility  95/100  w3  Clear intent; types and docs make the role obvious
-//   (3 rules passed)
+// @deterministic score: 100/100 — no issues
 // @deterministic:end
 ```
-
-Score is the weighted average of **all** signals (passed ones included); only the *display* is trimmed. On re-score the block is located by the sentinel and replaced; the scorer strips it first so the rules never count the annotation's own lines.
 
 ## Concrete example — a ticket (Markdown), DoD pair (Principle II)
 
 Markdown has no line comment, so the block uses an HTML comment (non-rendering):
 
 ```md
-<!-- @deterministic score: 35/100 scored: 2026-06-19T12:10:00Z
-  static/ticket-has-dod   0/100  w2  No 'Definition of Done' / acceptance-criteria section found
-  llm/dod-quality        55/100  w3  Goal stated, but success is not measurable; no validation path
-  ▸ next: add measurable acceptance criteria and a validation path
+<!-- @deterministic score: 67/100
+  [major] static/ticket-has-dod  no 'Definition of Done' / acceptance-criteria section → add measurable acceptance criteria
+  [major] llm/undefined-validation-path  no stated way to verify completion → describe how 'done' is checked
 -->
 # DET-42: Improve dashboard performance
 ...
 ```
 
-Determinism + judgment composing on one concern: a **static** rule says the DoD is *absent*; an **LLM** rule grades the *quality* of the intent that's there.
-
-## Logical record (what the comment block encodes)
-
-The comment rendering above serializes this logical annotation (the same fields the engine reads back when composing repo/ticket scores):
-
-```json
-{
-  "target": "file",
-  "path": "src/core/orchestrator.ts",
-  "score": 76,
-  "signals": [
-    { "ruleId": "static/file-length", "score": 55, "weight": 1, "reasoning": "612 lines — over the 300 soft cap; split this module" },
-    { "ruleId": "static/coverage", "score": 40, "weight": 2, "reasoning": "31% covered — add tests before extending" }
-  ],
-  "scoredAt": "2026-06-19T11:53:25.697Z"
-}
-```
+Determinism + judgment composing on one concern: a **static** rule finds the DoD *absent*; an **LLM** rule names what verification is missing.
 
 ## Validation & edge rules
-- Output failing `RuleSignalSchema` → signal dropped with a warning; run continues (FR-002).
-- No applicable rules → score `100` with reasoning "No applicable rules fired" (never silent 0).
-- Inert rule (e.g. TS rule on non-TS file) → neutral `100` signal explaining inertness; no penalty.
-- LLM malformed output → neutral signal (Principle VI), never crash.
+- A rule result failing `RuleResultSchema` → the rule is dropped with a warning; the run continues (FR-002).
+- No applicable rules / no issues → score `100`, empty issue list (never a silent 0).
+- Inert rule (e.g. a TS rule on a non-TS file) → `{ issues: [] }`; no penalty.
+- LLM malformed output after retry → `{ issues: [] }` (never fabricate problems — Principle VI).

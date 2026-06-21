@@ -4,20 +4,20 @@ import { functionLength } from "../../src/rules/static/function-length.js";
 
 const ctx = (content: string) => ({ target: "file" as const, path: "x.ts", content });
 
-test("short functions score 100", async () => {
+test("short functions produce no issues", async () => {
   const out = await functionLength.run(ctx("function add(a, b) {\n  return a + b;\n}\n"));
-  assert.equal(out.score, 100);
+  assert.deepEqual(out.issues, []);
 });
 
-test("a long function is penalized and named", async () => {
+test("a long function yields an issue naming it, with a fix", async () => {
   const body = Array.from({ length: 80 }, (_, i) => `  const v${i} = ${i};`).join("\n");
   const out = await functionLength.run(ctx(`function huge() {\n${body}\n}\n`));
-  assert.ok(out.score < 100, "long function should lose points");
-  assert.match(out.reasoning, /huge/);
+  assert.equal(out.issues.length, 1);
+  assert.match(out.issues[0]!.problem, /huge/);
+  assert.ok(out.issues[0]!.fix.length > 0);
 });
 
-test("inert when no functions present", async () => {
+test("no functions → no issues (inert)", async () => {
   const out = await functionLength.run(ctx("export const x = 1;\n"));
-  assert.equal(out.score, 100);
-  assert.match(out.reasoning, /inert/);
+  assert.deepEqual(out.issues, []);
 });

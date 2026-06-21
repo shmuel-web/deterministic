@@ -1,51 +1,55 @@
-// @deterministic score: 98/100  scored: 2026-06-21T11:59:31.270Z
-//   llm/intent-legibility  95/100  w3  The intent is crystal-clear, and the specialized concerns (idempotency, comment syntax handling, shebang preservation) are isolated into dedicated utility functions.
-//   (3 rules passed)
-// @deterministic:end
 import { promises as fs } from "node:fs";
-import type { RuleTarget } from "./rule.js";
-import type { IdentifiedSignal } from "./arbitrator.js";
+import type { RuleTarget, Severity } from "./rule.js";
+import type { IdentifiedIssue } from "./score.js";
 import { getCommentStyle, type CommentStyle } from "./comment-style.js";
 
 /**
  * Annotations live INSIDE the scored file as native-syntax comments (Principle
  * IV; research.md D2) — a feedback channel to the next AI agent. We maintain an
  * idempotent block delimited by the `@deterministic` sentinel.
+ *
+ * The block IS the issue list: the score, then every problem with its fix. A
+ * clean file lists nothing. There is no praise and no timestamp (timestamps only
+ * churn diffs) — just what's wrong and how to fix it.
  */
 export interface Annotation {
   target: RuleTarget;
   path: string;
   score: number;
-  signals: IdentifiedSignal[];
-  scoredAt: string; // ISO 8601, supplied by the caller
+  issues: IdentifiedIssue[];
 }
 
 const START = "@deterministic";
 const END = "@deterministic:end";
 
-/**
- * Body lines of the annotation, before comment-syntax wrapping.
- *
- * Low-noise by design: only rules with room to improve (score < 100) are listed
- * — a punch-list, not a full report. Perfect rules collapse into a single
- * "(N rules passed)" summary so the score stays auditable (Principle III) without
- * the noise that would grow with every added rule.
- */
+const SEV_ORDER: Record<Severity, number> = { critical: 0, major: 1, minor: 2, info: 3 };
+
+/** Body lines of the annotation, before comment-syntax wrapping. */
 function bodyLines(a: Annotation): string[] {
-  const lines = [`${START} score: ${a.score}/100  scored: ${a.scoredAt}`];
-
-  const improvable = a.signals.filter((s) => s.score < 100);
-  const passed = a.signals.length - improvable.length;
-
-  for (const s of improvable) {
-    lines.push(`  ${s.ruleId}  ${s.score}/100  w${s.weight}  ${s.reasoning}`);
+  if (a.issues.length === 0) {
+    return [`${START} score: ${a.score}/100 — no issues`, END];
   }
-  if (passed > 0) lines.push(`  (${passed} rule${passed === 1 ? "" : "s"} passed)`);
 
-  // Surface a "next agent" hint only when something genuinely needs attention,
-  // so the hint stays actionable rather than echoing praise.
-  const worst = [...improvable].sort((x, y) => x.score - y.score)[0];
-  if (worst && worst.score < 70) lines.push(`  > next: ${worst.reasoning}`);
+  const lines = [`${START} score: ${a.score}/100`];
+
+  // Collapse identical findings (e.g. the same rule firing on many `any`s) into
+  // one line with a count, so a verbose rule doesn't flood the block.
+  const collapsed = new Map<string, { issue: IdentifiedIssue; count: number }>();
+  for (const i of a.issues) {
+    const key = `${i.ruleId}|${i.severity}|${i.problem}|${i.fix}`;
+    const seen = collapsed.get(key);
+    if (seen) seen.count++;
+    else collapsed.set(key, { issue: i, count: 1 });
+  }
+
+  // Worst first, so the most important problem is the first thing read.
+  const ordered = [...collapsed.values()].sort(
+    (x, y) => SEV_ORDER[x.issue.severity] - SEV_ORDER[y.issue.severity],
+  );
+  for (const { issue, count } of ordered) {
+    const tag = count > 1 ? `${issue.severity} ×${count}` : issue.severity;
+    lines.push(`  [${tag}] ${issue.ruleId}  ${issue.problem} → ${issue.fix}`);
+  }
 
   lines.push(END);
   return lines;
