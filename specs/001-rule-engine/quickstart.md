@@ -3,7 +3,7 @@
 ## Prerequisites
 - Node 18+ (npm ships with it)
 - A model (Principle V — required):
-  - **Local (default):** Ollama running with `qwen3-coder` → `ollama serve` / `brew services start ollama`, then `ollama pull qwen3-coder`
+  - **Local (default):** Ollama running with `gemma4` → `ollama serve` / `brew services start ollama`, then `ollama pull gemma4`
   - **or** set `DETERMINISTIC_LLM_API_URL` + `DETERMINISTIC_LLM_API_KEY`
 
 ## Public commands

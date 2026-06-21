@@ -118,7 +118,7 @@ A single concern can need both rule kinds. For a ticket's Definition of Done: a 
 
 ## Assumptions
 
-- Per the constitution, the stack is TypeScript/Node with a local Ollama + Qwen 3 Coder model available on dev machines; the hackathon scope is TypeScript-only.
+- Per the constitution, the stack is TypeScript/Node with a local Ollama + Gemma 4 model available on dev machines; the hackathon scope is TypeScript-only.
 - Annotations are stored in a local store by default; whether they are committed in-repo vs. kept as CI metadata is an open question deferred to the DevOps lane.
 - `init` / `score repo` (Lane 1), `score ticket` (Lane 2), and `validate ticket` (Lane 3) are later lanes; this feature delivers internal file scoring end-to-end plus the frozen contract every other lane builds on.
 - The reviewer-agent roles (Scout / Architect / Implementation / PM / Arbitrator) are the executors for LLM rules; their full multi-perspective implementation may be staged, but the contract and orchestration seam land here.
