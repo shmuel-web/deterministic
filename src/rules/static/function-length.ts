@@ -1,8 +1,7 @@
-// @deterministic score: 93/100  scored: 2026-06-21T08:19:14.239Z
-//   static/file-length  100/100  w1  69 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
+// @deterministic score: 95/100  scored: 2026-06-21T12:01:27.508Z
 //   static/function-length  94/100  w1  Function findFunctions is 54 lines — 4 over the 50-line cap; consider extracting.
-//   llm/intent-legibility  85/100  w3  File intent is clear: it enforces a maximum line length for functions using heuristic brace matching, with descriptive naming and comments explaining its purpose and behavior.
+//   llm/intent-legibility  90/100  w3  The purpose as a static linter rule is extremely clear, but the core function for brace-delimited function detection (`findFunctions`) is algorithmically complex and difficult to safely modify without deep understanding.
+//   (2 rules passed)
 // @deterministic:end
 import type { Rule } from "../../core/rule.js";
 

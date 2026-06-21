@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-// @deterministic score: 94/100  scored: 2026-06-21T08:18:43.744Z
-//   static/file-length  100/100  w1  59 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (main) is 28 lines — within the 50-line cap.
-//   llm/intent-legibility  85/100  w3  Clear command structure and helpful help text make the tool's purpose and usage obvious, though internal commands like 'file' reduce overall legibility.
+// @deterministic score: 99/100  scored: 2026-06-21T11:57:57.739Z
+//   llm/intent-legibility  98/100  w3  The file name, function (CLI entry point), and structure are textbook examples of clear intent; adding a new command requires highly localized modification within the main switch statement.
+//   (3 rules passed)
 // @deterministic:end
 import { init } from "./commands/init.js";
 import { scoreRepo } from "./commands/score-repo.js";

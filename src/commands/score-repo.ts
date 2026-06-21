@@ -1,9 +1,6 @@
-// @deterministic score: 85/100  scored: 2026-06-21T08:18:48.957Z
-//   static/file-length  100/100  w1  11 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (scoreRepo) is 3 lines — within the 50-line cap.
-//   llm/intent-legibility  65/100  w3  File purpose is somewhat clear from name and comment but implementation is incomplete and lacks specific details about the scoring algorithm or how to safely configure it.
-//   > next: File purpose is somewhat clear from name and comment but implementation is incomplete and lacks specific details about the scoring algorithm or how to safely configure it.
+// @deterministic score: 99/100  scored: 2026-06-21T11:58:43.849Z
+//   llm/intent-legibility  98/100  w3  The detailed JSDoc provides crystal-clear intent by explaining the precise function, necessary prerequisites (init), and underlying performance requirements.
+//   (3 rules passed)
 // @deterministic:end
 /**
  * `deterministic score repo` — the cheap, performant repo score: compose from

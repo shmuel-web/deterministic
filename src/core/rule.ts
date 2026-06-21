@@ -1,8 +1,5 @@
-// @deterministic score: 98/100  scored: 2026-06-21T08:19:07.292Z
-//   static/file-length  100/100  w1  42 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  No brace-delimited functions detected — rule inert.
-//   llm/intent-legibility  95/100  w3  Clear intent: this is a rule engine contract defining types and interfaces for static and LLM-based rules with well-documented purpose and governance constraints.
+// @deterministic score: 100/100  scored: 2026-06-21T12:00:48.970Z
+//   (4 rules passed)
 // @deterministic:end
 import { z } from "zod";
 

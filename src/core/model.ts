@@ -1,8 +1,6 @@
-// @deterministic score: 94/100  scored: 2026-06-21T08:19:02.827Z
-//   static/file-length  100/100  w1  67 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (ollamaClient) is 14 lines — within the 50-line cap.
-//   llm/intent-legibility  85/100  w3  File intent is clear: it resolves and provides model clients (local Ollama or API) for LLM-based rule execution, with safe fallbacks and proper error handling.
+// @deterministic score: 99/100  scored: 2026-06-21T12:00:15.190Z
+//   llm/intent-legibility  98/100  w3  The code uses exceptional modularity, clear function naming, and detailed JSDoc comments to explicitly document the fallback logic flow.
+//   (3 rules passed)
 // @deterministic:end
 import type { ModelClient } from "./rule.js";
 

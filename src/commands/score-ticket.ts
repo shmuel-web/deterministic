@@ -1,9 +1,6 @@
-// @deterministic score: 85/100  scored: 2026-06-21T08:18:50.546Z
-//   static/file-length  100/100  w1  13 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (scoreTicket) is 4 lines — within the 50-line cap.
-//   llm/intent-legibility  65/100  w3  File name and docstring indicate a ticket scoring command with deterministic and LLM-based rules, but implementation is stubbed and lacks clear structure for safe changes.
-//   > next: File name and docstring indicate a ticket scoring command with deterministic and LLM-based rules, but implementation is stubbed and lacks clear structure for safe changes.
+// @deterministic score: 98/100  scored: 2026-06-21T11:58:53.378Z
+//   llm/intent-legibility  95/100  w3  The descriptive name and extensive JSDoc clearly define the purpose, usage contract, and current development stage of the feature.
+//   (3 rules passed)
 // @deterministic:end
 /**
  * `deterministic score ticket <path>` — score a ticket: is it well-specified

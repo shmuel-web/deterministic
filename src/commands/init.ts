@@ -1,8 +1,6 @@
-// @deterministic score: 89/100  scored: 2026-06-21T08:18:45.223Z
-//   static/file-length  100/100  w1  11 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (init) is 3 lines — within the 50-line cap.
-//   llm/intent-legibility  75/100  w3  Purpose is clear from name and comments but implementation is missing, making it obvious this is a placeholder for expensive repository initialization.
+// @deterministic score: 99/100  scored: 2026-06-21T11:58:14.056Z
+//   llm/intent-legibility  98/100  w3  The detailed doc comments explain the architectural role, complexity, and purpose perfectly, making safe implementation guidance explicit.
+//   (3 rules passed)
 // @deterministic:end
 /**
  * `deterministic init` — the expensive first run: score and annotate EVERY file

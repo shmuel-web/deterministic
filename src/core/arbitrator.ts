@@ -1,8 +1,6 @@
-// @deterministic score: 94/100  scored: 2026-06-21T08:18:57.505Z
-//   static/file-length  100/100  w1  33 lines — within the 300-line soft cap.
-//   static/missing-types  100/100  w2  No `any` annotations.
-//   static/function-length  100/100  w1  Longest function (arbitrate) is 15 lines — within the 50-line cap.
-//   llm/intent-legibility  85/100  w3  The file's purpose as a rule signal arbitrator is clear from naming, function signature, and comprehensive comments, though the specific domain context requires some domain knowledge to fully grasp the 'ruleId' and 'score' semantics.
+// @deterministic score: 100/100  scored: 2026-06-21T11:59:48.096Z
+//   llm/intent-legibility  99/100  w3  The purpose is crystal-clear due to excellent typing, descriptive naming, and proactive JSDoc that explains both current implementation and future extension points.
+//   (3 rules passed)
 // @deterministic:end
 import type { RuleSignal } from "./rule.js";
 
