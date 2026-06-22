@@ -19,6 +19,7 @@ import { gitignoreSane } from "./src/rules/static/gitignore-sane.js";
 import { readmeContext } from "./src/rules/static/readme-context.js";
 import { agentRunsDeterministic } from "./src/rules/static/agent-runs-deterministic.js";
 import { coverageThreshold } from "./src/rules/static/coverage-threshold.js";
+import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
@@ -50,10 +51,10 @@ export const rules: Rule[] = [
   readmeContext,
   agentRunsDeterministic,
   coverageThreshold,
+  coverageAgentic,
 ];
 
-/** Project settings (the footprint is a guest — opt-out, default on). */
-export const settings = {
-  /** Write DETERMINISTIC.md + the one-line README score block on init / score repo. */
-  writeSurfaces: true,
-};
+// Settings live in their own module (rules import them without importing this
+// config, which imports the rules — that would be circular). Re-exported here
+// so existing `import { settings } from "deterministic.config"` keeps working.
+export { settings } from "./src/core/settings.js";
