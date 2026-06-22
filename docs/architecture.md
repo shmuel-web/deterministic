@@ -32,13 +32,12 @@ rules are the extension point (and the moat).
 ## Three targets, one engine — and they COMPOSE
 The targets aren't independent; scores flow up a dependency chain:
 ```
-file  ──(annotations + index)──▶  repo  ──┐
-                                           ├──▶  ticket
-file scores of the blast radius ──────────┘
+file  ──(annotations + index)──┬──▶  repo    = aggregate of file scores + repo-level rules
+                               └──▶  ticket  = avg(blast-radius file scores) − own-rule penalties
 ```
 - **file** — the atomic unit. The substrate everything composes from.
 - **repo** — `aggregate of file scores + repo-level rules`. Composed from file results + git, not by re-reading the tree.
-- **ticket** — `its own rules (is it well-specified?) + its blast radius (the files it would change, inheriting their scores) + the repo score`. So to score a ticket you read the repo score *and* the touched files' scores. "A ticket is as complex as the files it's going to touch." `score ticket` **consumes** `score repo` / file scores — one-directional, never re-scores files itself (see specs/003-score-ticket).
+- **ticket** — `clamp(average(blast-radius file scores) − Σ own-rule penalties, 0, 100)`. The **base** is the average score of the files it would change (so a ticket inherits the health of the code it touches — "a ticket is as complex as the files it's going to touch"); its **own rules** (is it well-specified?) subtract spec-quality penalties. `score ticket` **consumes** cached file scores — one-directional, never re-scores files itself (see specs/003-score-ticket). The **repo score is deliberately excluded** (averaging the whole repo dilutes a ticket's risk *up*); it's reserved for multi-repo "which repo is safer" workflows.
 
 ## Pipeline (per file)
 ```
