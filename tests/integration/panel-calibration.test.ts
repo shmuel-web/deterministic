@@ -38,8 +38,8 @@ test("plumbing: a grounded model issue is attributed + capped, on the real fixtu
   const content = await read("examples/tickets/panel-schema-no-migration.md");
   const grounded = '{"issues":[{"problem":"src/core/index-store.ts changes the persisted shape with no migration","fix":"default the field in loadIndex","severity":"major"}]}';
   const { issues } = await withReview(async () => reviewPanel.run({ target: "ticket", path: "T.md", content, model: stub(grounded) }));
-  assert.equal(issues.length, 1);
-  assert.match(issues[0]!.problem, /^\[Architect\] /);
+  assert.equal(issues.length, 1); // both reviewers raise the same grounded gap → synthesizer dedups to one
+  assert.match(issues[0]!.problem, /^\[Architect/); // attribution may merge reviewers (e.g. "[Architect, Developer]")
   assert.equal(issues[0]!.severity, "minor"); // major capped to minor (panel issues are nudges)
 });
 

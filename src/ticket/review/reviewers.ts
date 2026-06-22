@@ -33,8 +33,20 @@ export const architect: Reviewer = {
   nonGoals: "line-level code style, test coverage, scope or process — those are other reviewers' jobs",
 };
 
-/** The panel, in order. Grows in #81–#83 (Implementation Developer, QA, Lead PM). */
-export const PANEL_REVIEWERS: Reviewer[] = [architect];
+export const implementationDeveloper: Reviewer = {
+  name: "Developer",
+  role: "a senior implementation engineer",
+  concern: "can this be built correctly from what's written plus the code it touches?",
+  lookFor: `- an input / error / empty / null / timeout path the change must handle but the ticket ignores
+- a changed function or signature that would break its existing callers in the touched files
+- a config / env var / secret / dependency the change needs that the ticket doesn't mention
+- an unstated ordering or dependency between the files being changed`,
+  nonGoals:
+    "system architecture (migrations, feature flags, compatibility, rollout, data integrity), test coverage, or scope/process — those are other reviewers' jobs",
+};
+
+/** The panel, in order. Grows in #82–#83 (QA, Lead PM). */
+export const PANEL_REVIEWERS: Reviewer[] = [architect, implementationDeveloper];
 
 /**
  * Build a reviewer's drafting prompt. The guardrails ARE the design: silence by
