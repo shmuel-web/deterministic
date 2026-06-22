@@ -43,6 +43,13 @@ Local models emit flakier JSON than a frontier API.
 - Every LLM rule output MUST be validated against a Zod schema before use, with validate-and-retry on failure.
 - A malformed model response MUST degrade gracefully (neutral signal), never crash a run or poison a score.
 
+### VII. The Footprint Is a Guest
+Writing into someone's files is invasive; restraint is what makes it welcome. Cleanliness is the permission to be in a repo at all — a noisy footprint gets resented and stripped, a clean one earns trust (and curiosity).
+- **Minimal interference, right context:** the marks MUST be the least that does the job, placed where they're actually useful — per-file issues live IN the file (where the next agent reads them), the per-file score is in that file's annotation, and the repository-level score lives on the README (the front page), with the full breakdown in a linked report.
+- **Only when earned:** the footprint appears only when it has something worth saying. A clean target carries no annotation (absence = a perfect score); no praise, no timestamps, no churn.
+- **Removable:** every mark is idempotent and strippable; the tool never traps itself in a repo, and it MUST strip its own footprint before scoring so it never scores itself.
+- **Opt-out:** a project may turn the footprint off; it is on by default because that is the adoption wedge, not because it is mandatory.
+
 ## Technology Constraints (locked)
 
 - **Language/runtime:** TypeScript, Node 18+, ESM (NodeNext).
@@ -72,5 +79,6 @@ Deployment/hosting is explicitly out of scope — local-on-every-laptop is the t
 
 ### Amendment log
 - **v2.0.0 (2026-06-21)** — Rule contract changed from `run() → { score, weight, reasoning }` to `run() → { issues: [{ problem, fix, severity }] }`. *Rationale:* a rule returning a score-plus-reasoning produced meaningless near-perfect praise (e.g. `98 — "crystal clear"`), which is noise, not signal. Rules now emit only fixable issues; the engine derives the score by penalty subtraction (Principle III). *Migration:* every rule returns `{ issues }` instead of `{ score, weight, reasoning }`; per-rule `weight` is removed (importance now lives in per-issue `severity`); annotations carry the issue list, not a score breakdown; no timestamp.
+- **v2.1.0 (2026-06-22)** — Added Principle VII (The Footprint Is a Guest): minimal interference placed in the right context (per-file issues in the file, repo score on the README), present only when earned, removable, opt-out. Codifies the restraint that makes writing into a repo welcome rather than invasive.
 
-**Version**: 2.0.0 | **Ratified**: 2026-06-19 | **Last Amended**: 2026-06-21
+**Version**: 2.1.0 | **Ratified**: 2026-06-19 | **Last Amended**: 2026-06-22
