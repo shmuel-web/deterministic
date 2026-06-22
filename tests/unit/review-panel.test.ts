@@ -4,18 +4,19 @@ import type { ModelClient } from "../../src/core/rule.js";
 import { settings } from "../../src/core/settings.js";
 import { reviewPanel } from "../../src/ticket/review/panel.js";
 
-/**
- * Slice 1 (#76): the Architect-only panel scaffold. We toggle the opt-in setting
- * per test and restore it, and pin the model with a stub so the funnel's shape is
- * verified deterministically (no Ollama). The blast radius is grounded in a real
- * repo file (src/core/git.ts exists) so gatherBlastRadius can read it.
- */
 const stub = (json: string): ModelClient => ({ complete: async () => json });
-/** A model that returns queued responses in order (gate call, then draft call, …). */
-const seqStub = (...responses: string[]): ModelClient => {
-  let i = 0;
-  return { complete: async () => responses[Math.min(i++, responses.length - 1)]! };
-};
+/**
+ * Content-routing stub: answers by WHICH funnel call is asking (gate / draft /
+ * defender), inferred from the prompt — so it's robust to multiple reviewers
+ * running concurrently (call order is non-deterministic across reviewers).
+ */
+const routeStub = (o: { applies?: boolean; draft?: string; refuted?: boolean } = {}): ModelClient => ({
+  complete: async (p: string) => {
+    if (p.includes('{"applies"')) return `{"applies": ${o.applies ?? true}}`;
+    if (p.includes('{"refuted"')) return `{"refuted": ${o.refuted ?? false}}`;
+    return o.draft ?? '{"issues":[]}';
+  },
+});
 const ARCH_ISSUE = '{"issues":[{"problem":"the enum change in src/core/git.ts has no migration","fix":"add a migration step","severity":"major"}]}';
 
 async function withReview<T>(enabled: boolean, fn: () => Promise<T>): Promise<T> {
@@ -28,8 +29,7 @@ async function withReview<T>(enabled: boolean, fn: () => Promise<T>): Promise<T>
   }
 }
 
-const run = async (content: string, model: ModelClient) =>
-  reviewPanel.run({ target: "ticket", path: "T.md", content, model });
+const run = async (content: string, model: ModelClient) => reviewPanel.run({ target: "ticket", path: "T.md", content, model });
 
 test("panel is silent when review is disabled (opt-in; no model call)", async () => {
   let called = false;
@@ -40,14 +40,14 @@ test("panel is silent when review is disabled (opt-in; no model call)", async ()
 });
 
 test("panel stays silent when no blast radius resolves (FR-008 degrade)", async () => {
-  const { issues } = await withReview(true, () => run("Make everything 10x better 🚀", stub(ARCH_ISSUE)));
+  const { issues } = await withReview(true, () => run("Make everything 10x better 🚀", routeStub({ draft: ARCH_ISSUE })));
   assert.deepEqual(issues, [], "no files named → no grounding → no issues");
 });
 
-test("enabled + grounded: Architect issue is attributed and capped to minor", async () => {
-  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", stub(ARCH_ISSUE)));
-  assert.equal(issues.length, 1);
-  assert.match(issues[0]!.problem, /^\[Architect\] /, "issue must be attributed to the reviewer");
+test("enabled + grounded: issue is attributed and capped to minor", async () => {
+  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", routeStub({ draft: ARCH_ISSUE })));
+  assert.equal(issues.length, 1, "both reviewers raise the same gap → synthesizer dedups to one");
+  assert.match(issues[0]!.problem, /^\[Architect/, "issue must be attributed to a reviewer");
   assert.equal(issues[0]!.severity, "minor", "major must be capped to minor (panel issues are nudges)");
 });
 
@@ -56,44 +56,37 @@ test("unparseable model output → no fabricated issues", async () => {
   assert.deepEqual(issues, []);
 });
 
-test("applicability gate (FR-004): gate says no → reviewer drafts nothing", async () => {
-  // Constant 'applies:false' answers the gate; the draft is never reached.
-  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", stub('{"applies": false}')));
+test("applicability gate (FR-004): gate says no → reviewers draft nothing", async () => {
+  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", routeStub({ applies: false })));
   assert.deepEqual(issues, []);
 });
 
 test("evidence filter (FR-005): a draft that cites no blast-radius file is dropped", async () => {
-  // gate → applies:true, then draft → an ungrounded 'consider metrics' issue.
   const ungrounded = '{"issues":[{"problem":"consider adding metrics","fix":"add metrics","severity":"minor"}]}';
-  const { issues } = await withReview(true, () =>
-    run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ungrounded)),
-  );
+  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", routeStub({ draft: ungrounded })));
   assert.deepEqual(issues, [], "an issue citing no blast-radius file must be filtered out");
 });
 
-test("evidence filter keeps an issue that DOES cite a blast-radius file (defender upholds)", async () => {
-  // gate → draft → defender(refuted:false = upholds) → kept
+test("evidence + Defender upholds → issue kept and attributed", async () => {
   const { issues } = await withReview(true, () =>
-    run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE, '{"refuted": false}')),
+    run("Change the enum in src/core/git.ts", routeStub({ draft: ARCH_ISSUE, refuted: false })),
   );
   assert.equal(issues.length, 1);
-  assert.match(issues[0]!.problem, /^\[Architect\] /);
+  assert.match(issues[0]!.problem, /^\[Architect/);
 });
 
 test("adversarial Defender (FR-006): a refuted issue is dropped", async () => {
-  // gate → draft(grounded) → defender(refuted:true) → dropped
   const { issues } = await withReview(true, () =>
-    run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE, '{"refuted": true}')),
+    run("Change the enum in src/core/git.ts", routeStub({ draft: ARCH_ISSUE, refuted: true })),
   );
   assert.deepEqual(issues, [], "an issue the Defender refutes must not survive");
 });
 
-test("defender 'off' skips the refutation pass (issue kept without a defender call)", async () => {
+test("defender 'off' skips the refutation pass (issue kept)", async () => {
   const prev = settings.review.defender;
   settings.review.defender = "off";
   try {
-    // only gate + draft responses needed — no defender call is made
-    const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE)));
+    const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", routeStub({ draft: ARCH_ISSUE })));
     assert.equal(issues.length, 1);
   } finally {
     settings.review.defender = prev;
