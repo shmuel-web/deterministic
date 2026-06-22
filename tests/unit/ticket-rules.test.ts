@@ -32,6 +32,24 @@ test("ticket-has-dod: passes when a done-condition section is present", async ()
   assert.deepEqual((await ticketHasDod.run(ctx("Definition of Done: tests pass"))).issues, []);
 });
 
+test("ticket-has-dod absorbs #60 (no-acceptance-criteria): a ticket with a goal but no acceptance section is flagged", async () => {
+  // A fleshed-out ticket that still has NO acceptance criteria / DoD — exactly
+  // what the separate `no-acceptance-criteria` rule would have caught.
+  const noAcceptance = "# Add a cache\n## Context\nThe API is slow.\n## Goal\nCache responses for 60s.";
+  const { issues } = await ticketHasDod.run(ctx(noAcceptance));
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0]!.severity, "major");
+  // …and the moment an acceptance section appears, it passes — no double-flag.
+  assert.deepEqual((await ticketHasDod.run(ctx(noAcceptance + "\n## Acceptance Criteria\n- cache hit ratio reported"))).issues, []);
+});
+
+test("dod-quality (#25) is wired into the ticket rules as a scoped llm rule", () => {
+  const r = ticketRules.find((x) => x.id === "llm/dod-quality");
+  assert.ok(r, "dod-quality must be registered in ticketRules");
+  assert.equal(r!.target, "ticket");
+  assert.equal(r!.type, "llm");
+});
+
 test("composition: a contentless ticket scores low from own rules alone (SC-001)", async () => {
   // static fires (no DoD); stub LLM rules each find one major.
   const issues = await runRules(ticketRules, ctx("To the moon 🚀🌕💸"), {

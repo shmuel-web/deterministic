@@ -1,5 +1,7 @@
 import type { Rule } from "../core/rule.js";
+import { thinTicket } from "./rules/thin-ticket.js";
 import { ticketHasDod } from "./rules/ticket-has-dod.js";
+import { dodQuality } from "./rules/dod-quality.js";
 import { unmeasurableGoal } from "./rules/unmeasurable-goal.js";
 import { undefinedValidationPath } from "./rules/undefined-validation-path.js";
 
@@ -13,4 +15,4 @@ import { undefinedValidationPath } from "./rules/undefined-validation-path.js";
  * code side never imports this — see ADR-0001. The blast-radius / execution-risk
  * dimension (FR-003/004) composes on top of these via the Scout, later.
  */
-export const ticketRules: Rule[] = [ticketHasDod, unmeasurableGoal, undefinedValidationPath];
+export const ticketRules: Rule[] = [thinTicket, ticketHasDod, dodQuality, unmeasurableGoal, undefinedValidationPath];
