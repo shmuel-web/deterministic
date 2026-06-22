@@ -13,6 +13,10 @@ import { tsconfigStrict } from "./src/rules/static/tsconfig-strict.js";
 import { lockfileCommitted } from "./src/rules/static/lockfile-committed.js";
 import { licensePresent } from "./src/rules/static/license-present.js";
 import { nodeVersionPinned } from "./src/rules/static/node-version-pinned.js";
+import { noCommittedSecrets } from "./src/rules/static/no-committed-secrets.js";
+import { ciRunsTypecheck } from "./src/rules/static/ci-runs-typecheck.js";
+import { gitignoreSane } from "./src/rules/static/gitignore-sane.js";
+import { readmeContext } from "./src/rules/static/readme-context.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
@@ -38,6 +42,10 @@ export const rules: Rule[] = [
   lockfileCommitted,
   licensePresent,
   nodeVersionPinned,
+  noCommittedSecrets,
+  ciRunsTypecheck,
+  gitignoreSane,
+  readmeContext,
 ];
 
 /** Project settings (the footprint is a guest — opt-out, default on). */
