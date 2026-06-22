@@ -46,5 +46,5 @@ LLM rules run on a **local model by default** (Ollama + Gemma 4) — no API keys
 TypeScript · Node 18+ · Zod · Ollama + Gemma 4 · git · spec-driven (Spec-Kit). MIT.
 
 <!-- deterministic:start -->
-> 🤖 This repo is linted for AI coding agents by **Deterministic** — repo score **99/100**. See [DETERMINISTIC.md](./DETERMINISTIC.md).
+> 🤖 This repo is linted for AI coding agents by **Deterministic** — repo score **90/100**. See [DETERMINISTIC.md](./DETERMINISTIC.md).
 <!-- deterministic:end -->
