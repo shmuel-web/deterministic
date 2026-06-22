@@ -1,26 +1,13 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import type { Rule, Severity } from "../../core/rule.js";
-
-const REPORT = path.join("coverage", "coverage-summary.json");
-
-/** Banded severity by line-coverage %. 100 = clean; lower bands bite harder. */
-function band(pct: number): Severity | null {
-  if (pct >= 100) return null;
-  if (pct >= 90) return "info";
-  if (pct >= 80) return "minor";
-  if (pct >= 70) return "major";
-  return "critical";
-}
+import type { Rule } from "../../core/rule.js";
+import { band, readCoveragePct, isReportStale } from "../../core/coverage.js";
+import { settings } from "../../core/settings.js";
 
 /**
- * Repo rule: score actual test coverage. Reads the coverage report that
- * `npm run coverage` / CI produced (`coverage/coverage-summary.json`) — the rule
- * consumes the result rather than running the suite itself (that's CI's job).
- * Silent when no report is present (nothing to measure; run coverage first).
- *
- * NOTE: coverage is a whole-suite measurement, so the number reflects the last
- * coverage run — re-run coverage after changes to refresh it.
+ * Repo rule: score actual test coverage from the report `npm run coverage` / CI
+ * produced. Owns coverage when execution is OFF; defers to `coverage-agentic`
+ * when execution is ON (which re-runs for a fresh number). A stale report (code
+ * changed since it was generated) is FLAGGED rather than trusted — its number
+ * would be wrong, and we can't refresh it without execution.
  */
 export const coverageThreshold: Rule = {
   id: "static/coverage-threshold",
@@ -28,17 +15,23 @@ export const coverageThreshold: Rule = {
   type: "static",
   description: "Scores line coverage from the coverage report (banded by %).",
   async run({ path: root }) {
-    let pct: number;
-    try {
-      const summary = JSON.parse(await fs.readFile(path.join(root, REPORT), "utf8")) as {
-        total?: { lines?: { pct?: number } };
+    if (settings.execution.enabled) return { issues: [] }; // agentic owns coverage in execution mode
+
+    const pct = await readCoveragePct(root);
+    if (pct === null) return { issues: [] }; // no report — nothing to measure
+
+    if (await isReportStale(root)) {
+      return {
+        issues: [
+          {
+            problem: "coverage report is stale (code changed since it was generated)",
+            fix: "re-run coverage (e.g. `npm run coverage`) so the score reflects current code",
+            severity: "minor",
+          },
+        ],
       };
-      const value = summary.total?.lines?.pct;
-      if (typeof value !== "number") return { issues: [] };
-      pct = value;
-    } catch {
-      return { issues: [] }; // no/unreadable report — can't measure
     }
+
     const severity = band(pct);
     if (!severity) return { issues: [] };
     return {

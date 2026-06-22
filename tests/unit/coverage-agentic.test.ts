@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { coverageAgentic, band, parsePct } from "../../src/rules/static/coverage-agentic.js";
+import { coverageAgentic, parsePct } from "../../src/rules/static/coverage-agentic.js";
+import { band } from "../../src/core/coverage.js";
 
 const run = async (root: string) => (await coverageAgentic.run({ target: "repo", path: root })).issues;
 const tmp = async (files: Record<string, string> = {}) => {
