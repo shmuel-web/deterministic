@@ -15,4 +15,15 @@ export const settings = {
     enabled: false,
     timeoutMs: 120_000,
   },
+  /**
+   * Agentic ticket-review panel (spec 004) — the multi-reviewer panel that reads
+   * the blast-radius files. OFF by default: it's the most expensive tier (many
+   * LLM calls), so it's opt-in and runs only on-demand (`score ticket`).
+   */
+  review: {
+    enabled: false,
+    /** Cap the blast-radius context fed to reviewers, to bound prompt size/cost. */
+    maxFiles: 6,
+    maxBytesPerFile: 4_000,
+  },
 };
