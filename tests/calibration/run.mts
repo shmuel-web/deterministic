@@ -32,6 +32,7 @@ const FIXTURES: Fixture[] = [
   { file: "examples/tickets/panel-clean.md", expect: "silent" },
   { file: "examples/tickets/panel-schema-no-migration.md", expect: "flag", citesFile: "index-store.ts" },
   { file: "examples/tickets/panel-untested-behavior.md", expect: "flag", citesFile: "exec.ts", byReviewer: "QA" },
+  { file: "examples/tickets/panel-bundled-scope.md", expect: "flag", byReviewer: "PM" },
 ];
 
 const ROUNDS = Number(process.env.CALIBRATION_ROUNDS) || 1;
@@ -50,16 +51,16 @@ async function main(): Promise<void> {
 
   for (const fx of FIXTURES) {
     const content = await fs.readFile(path.join(repoRoot, fx.file), "utf8");
-    const counts: number[] = [];
-    let lastIssues: { problem: string }[] = [];
-
+    const rounds: { problem: string }[][] = [];
     for (let r = 0; r < ROUNDS; r++) {
       const { issues } = await reviewPanel.run({ target: "ticket", path: fx.file, content, model });
-      counts.push(issues.length);
-      lastIssues = issues;
+      rounds.push(issues);
     }
-
+    const counts = rounds.map((r) => r.length);
     const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
+
+    // Asymmetry: SILENCE is precision — must hold EVERY round. FLAGGING is recall
+    // — tolerant of LLM variance, so it passes if the target fires in ANY round.
     let ok: boolean;
     if (fx.expect === "silent") {
       ok = counts.every((c) => c === 0);
@@ -67,12 +68,12 @@ async function main(): Promise<void> {
       const cites = (i: { problem: string }) => !fx.citesFile || i.problem.toLowerCase().includes(fx.citesFile.toLowerCase());
       const tag = (i: { problem: string }) => i.problem.match(/^\[([^\]]+)\]/)?.[1] ?? "";
       const byReviewer = (i: { problem: string }) => !fx.byReviewer || tag(i).includes(fx.byReviewer);
-      ok = lastIssues.length >= 1 && lastIssues.some((i) => cites(i) && byReviewer(i));
+      ok = rounds.some((round) => round.some((i) => cites(i) && byReviewer(i)));
     }
 
     if (!ok) failures++;
     console.log(`  ${ok ? "✓" : "✗"} [${fx.expect}] ${fx.file} — counts: [${counts.join(", ")}] (avg ${avg.toFixed(1)})`);
-    for (const i of lastIssues) console.log(`        • ${i.problem}`);
+    for (const i of rounds[rounds.length - 1] ?? []) console.log(`        • ${i.problem}`);
   }
 
   console.log(`\n  ${failures === 0 ? "PASS" : `FAIL — ${failures} fixture(s) off-target`}\n`);
