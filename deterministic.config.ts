@@ -6,6 +6,8 @@ import { intentLegibility } from "./src/rules/llm/intent-legibility.js";
 import { repoHasTests } from "./src/rules/static/repo-has-tests.js";
 import { hasCoverageTool } from "./src/rules/static/has-coverage-tool.js";
 import { ciRunsTests } from "./src/rules/static/ci-runs-tests.js";
+import { linterConfigured } from "./src/rules/static/linter-configured.js";
+import { ciRunsLint } from "./src/rules/static/ci-runs-lint.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
@@ -24,6 +26,8 @@ export const rules: Rule[] = [
   repoHasTests,
   hasCoverageTool,
   ciRunsTests,
+  linterConfigured,
+  ciRunsLint,
 ];
 
 /** Project settings (the footprint is a guest — opt-out, default on). */
