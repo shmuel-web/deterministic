@@ -3,6 +3,7 @@ import { rules } from "../../deterministic.config.js";
 import { runRules } from "../core/orchestrator.js";
 import { score as scoreIssues, type IdentifiedIssue } from "../core/score.js";
 import { writeAnnotation, stripAnnotation } from "../core/annotation.js";
+import { stripReadmeBlock } from "../core/report.js";
 import { resolveModel, withConcurrencyLimit } from "../core/model.js";
 import { createLimiter, defaultConcurrency } from "../core/pool.js";
 import type { ModelClient } from "../core/rule.js";
@@ -21,7 +22,9 @@ export interface FileScore {
  */
 export async function scoreOneFile(file: string, model: ModelClient | null): Promise<FileScore> {
   const raw = await fs.readFile(file, "utf8");
-  const content = stripAnnotation(raw);
+  // Strip our own footprints (the file annotation + the README score block) so
+  // the surfaces never score themselves.
+  const content = stripReadmeBlock(stripAnnotation(raw));
   const issues = await runRules(rules, { target: "file", path: file, content }, { model: model ?? undefined });
   const { score } = scoreIssues(issues);
   await writeAnnotation({ target: "file", path: file, score, issues });
