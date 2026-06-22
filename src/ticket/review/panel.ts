@@ -1,11 +1,15 @@
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import { z } from "zod";
 import type { ModelClient, Rule, RuleIssue, Severity } from "../../core/rule.js";
 import { RuleIssueSchema } from "../../core/rule.js";
 import { settings } from "../../core/settings.js";
 import { inGitRepo, listSourceFiles } from "../../core/git.js";
 import { resolveBlastRadius } from "../scout.js";
-import { PANEL_REVIEWERS, buildReviewerPrompt, type Reviewer } from "./reviewers.js";
+import { PANEL_REVIEWERS, buildReviewerPrompt, buildGatePrompt, type Reviewer } from "./reviewers.js";
+
+type BlastFile = { path: string; content: string };
+const AppliesSchema = z.object({ applies: z.boolean() });
 
 /**
  * The agentic ticket-review panel (spec 004) as ONE `Rule` (`target: ticket`).
@@ -39,8 +43,26 @@ function capSeverity(s: Severity): Severity {
   return s === "info" ? "info" : "minor";
 }
 
+/** Applicability gate (FR-004): does this reviewer's concern apply at all? */
+async function applies(reviewer: Reviewer, ticket: string, blastRadius: string, model: ModelClient): Promise<boolean> {
+  const match = (await model.complete(buildGatePrompt(reviewer, ticket, blastRadius))).match(/\{[\s\S]*\}/);
+  if (!match) return true; // unparseable → don't silently skip a real concern
+  try {
+    const parsed = AppliesSchema.safeParse(JSON.parse(match[0]));
+    return parsed.success ? parsed.data.applies : true;
+  } catch {
+    return true;
+  }
+}
+
+/** Evidence gate (FR-005): an issue must cite one of the blast-radius files. */
+function citesBlastRadius(issue: RuleIssue, files: BlastFile[]): boolean {
+  const hay = `${issue.problem} ${issue.fix}`.toLowerCase();
+  return files.some((f) => hay.includes(f.path.toLowerCase()) || hay.includes(path.posix.basename(f.path).toLowerCase()));
+}
+
 /** Read the content of the ticket's blast-radius files, bounded by settings. */
-async function gatherBlastRadius(ticket: string): Promise<{ path: string; content: string }[]> {
+async function gatherBlastRadius(ticket: string): Promise<BlastFile[]> {
   if (!inGitRepo()) return [];
   let files: string[];
   try {
@@ -60,18 +82,26 @@ async function gatherBlastRadius(ticket: string): Promise<{ path: string; conten
   return out;
 }
 
-/** Run one reviewer's draft, with a single retry, capping + attributing the issues. */
-async function runReviewer(reviewer: Reviewer, ticket: string, blastRadius: string, model: ModelClient): Promise<RuleIssue[]> {
+/**
+ * Run one reviewer through the funnel: applicability gate → draft → evidence
+ * filter → cap + attribute. Most proposed issues die in the gate or the filter.
+ */
+async function runReviewer(reviewer: Reviewer, ticket: string, blastRadius: string, files: BlastFile[], model: ModelClient): Promise<RuleIssue[]> {
+  // 1. applicability gate — skip the (larger) draft entirely if the concern is N/A.
+  if (!(await applies(reviewer, ticket, blastRadius, model))) return [];
+
+  // 2. draft (one retry on a malformed response).
   let issues: RuleIssue[] | null = null;
   for (let attempt = 0; attempt <= 1 && !issues; attempt++) {
     issues = parseIssues(await model.complete(buildReviewerPrompt(reviewer, ticket, blastRadius)));
   }
   if (!issues) return []; // unparseable after retry → don't fabricate (Principle VI)
-  return issues.map((i) => ({
-    problem: `[${reviewer.name}] ${i.problem}`,
-    fix: i.fix,
-    severity: capSeverity(i.severity),
-  }));
+
+  // 3. evidence filter — drop anything not grounded in a blast-radius file.
+  // 4. cap severity + attribute to the reviewer.
+  return issues
+    .filter((i) => citesBlastRadius(i, files))
+    .map((i) => ({ problem: `[${reviewer.name}] ${i.problem}`, fix: i.fix, severity: capSeverity(i.severity) }));
 }
 
 export const reviewPanel: Rule = {
@@ -89,7 +119,7 @@ export const reviewPanel: Rule = {
     if (files.length === 0) return { issues: [] }; // FR-008: no grounding → stay silent
 
     const blastRadius = files.map((f) => `=== ${f.path} ===\n${f.content}`).join("\n\n");
-    const perReviewer = await Promise.all(PANEL_REVIEWERS.map((r) => runReviewer(r, ticket, blastRadius, model)));
+    const perReviewer = await Promise.all(PANEL_REVIEWERS.map((r) => runReviewer(r, ticket, blastRadius, files, model)));
     return { issues: perReviewer.flat() };
   },
 };

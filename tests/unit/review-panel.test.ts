@@ -11,6 +11,11 @@ import { reviewPanel } from "../../src/ticket/review/panel.js";
  * repo file (src/core/git.ts exists) so gatherBlastRadius can read it.
  */
 const stub = (json: string): ModelClient => ({ complete: async () => json });
+/** A model that returns queued responses in order (gate call, then draft call, …). */
+const seqStub = (...responses: string[]): ModelClient => {
+  let i = 0;
+  return { complete: async () => responses[Math.min(i++, responses.length - 1)]! };
+};
 const ARCH_ISSUE = '{"issues":[{"problem":"the enum change in src/core/git.ts has no migration","fix":"add a migration step","severity":"major"}]}';
 
 async function withReview<T>(enabled: boolean, fn: () => Promise<T>): Promise<T> {
@@ -49,4 +54,25 @@ test("enabled + grounded: Architect issue is attributed and capped to minor", as
 test("unparseable model output → no fabricated issues", async () => {
   const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", stub("sorry, I cannot help")));
   assert.deepEqual(issues, []);
+});
+
+test("applicability gate (FR-004): gate says no → reviewer drafts nothing", async () => {
+  // Constant 'applies:false' answers the gate; the draft is never reached.
+  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", stub('{"applies": false}')));
+  assert.deepEqual(issues, []);
+});
+
+test("evidence filter (FR-005): a draft that cites no blast-radius file is dropped", async () => {
+  // gate → applies:true, then draft → an ungrounded 'consider metrics' issue.
+  const ungrounded = '{"issues":[{"problem":"consider adding metrics","fix":"add metrics","severity":"minor"}]}';
+  const { issues } = await withReview(true, () =>
+    run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ungrounded)),
+  );
+  assert.deepEqual(issues, [], "an issue citing no blast-radius file must be filtered out");
+});
+
+test("evidence filter keeps an issue that DOES cite a blast-radius file", async () => {
+  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE)));
+  assert.equal(issues.length, 1);
+  assert.match(issues[0]!.problem, /^\[Architect\] /);
 });

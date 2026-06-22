@@ -69,3 +69,25 @@ BLAST-RADIUS FILES:
 ${blastRadius}
 ---`;
 }
+
+/**
+ * The applicability gate (spec 004, FR-004) — the cheap first pass. The reviewer
+ * decides whether its concern even applies before looking for gaps; an agent that
+ * doesn't run can't invent issues. Short output (one boolean), so it's fast.
+ */
+export function buildGatePrompt(reviewer: Reviewer, ticket: string, blastRadius: string): string {
+  return `You are ${reviewer.role}. Your concern: ${reviewer.concern}
+
+Does this concern PLAUSIBLY APPLY to the ticket below and the files it changes? Answer "no" if the change clearly has nothing to do with your concern (e.g. it is only about: ${reviewer.nonGoals}). When genuinely unsure, answer "yes".
+
+Reply ONLY JSON: {"applies": true|false}
+
+TICKET:
+---
+${ticket}
+---
+BLAST-RADIUS FILES:
+---
+${blastRadius}
+---`;
+}
