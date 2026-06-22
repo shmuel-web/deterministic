@@ -71,8 +71,31 @@ test("evidence filter (FR-005): a draft that cites no blast-radius file is dropp
   assert.deepEqual(issues, [], "an issue citing no blast-radius file must be filtered out");
 });
 
-test("evidence filter keeps an issue that DOES cite a blast-radius file", async () => {
-  const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE)));
+test("evidence filter keeps an issue that DOES cite a blast-radius file (defender upholds)", async () => {
+  // gate → draft → defender(refuted:false = upholds) → kept
+  const { issues } = await withReview(true, () =>
+    run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE, '{"refuted": false}')),
+  );
   assert.equal(issues.length, 1);
   assert.match(issues[0]!.problem, /^\[Architect\] /);
+});
+
+test("adversarial Defender (FR-006): a refuted issue is dropped", async () => {
+  // gate → draft(grounded) → defender(refuted:true) → dropped
+  const { issues } = await withReview(true, () =>
+    run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE, '{"refuted": true}')),
+  );
+  assert.deepEqual(issues, [], "an issue the Defender refutes must not survive");
+});
+
+test("defender 'off' skips the refutation pass (issue kept without a defender call)", async () => {
+  const prev = settings.review.defender;
+  settings.review.defender = "off";
+  try {
+    // only gate + draft responses needed — no defender call is made
+    const { issues } = await withReview(true, () => run("Change the enum in src/core/git.ts", seqStub('{"applies": true}', ARCH_ISSUE)));
+    assert.equal(issues.length, 1);
+  } finally {
+    settings.review.defender = prev;
+  }
 });

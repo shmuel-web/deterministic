@@ -91,3 +91,36 @@ BLAST-RADIUS FILES:
 ${blastRadius}
 ---`;
 }
+
+/**
+ * The adversarial Defender (spec 004, FR-006). Argues the ticket is FINE, so an
+ * objection survives only if it names a genuinely material gap. This is the
+ * strongest anti-overshoot lever: someone is actively trying to throw each issue
+ * out. `strict` holds a higher bar (refute unless concretely material).
+ */
+export function buildDefenderPrompt(
+  problem: string,
+  fix: string,
+  ticket: string,
+  blastRadius: string,
+  strict: boolean,
+): string {
+  return `You are defending a development ticket against a reviewer's objection. Judge HONESTLY whether the objection identifies a REAL, MATERIAL gap that must be addressed before work starts — or whether it is already implied by the ticket, out of scope, handled elsewhere, or merely a matter of taste.
+
+${strict ? "Hold a HIGH bar: default to REFUTED unless the objection names a concrete, material defect with a clear, necessary fix." : "Refute only objections that are clearly spurious, redundant, or out of scope."}
+
+OBJECTION
+  problem: ${problem}
+  fix: ${fix}
+
+TICKET:
+---
+${ticket}
+---
+BLAST-RADIUS FILES:
+---
+${blastRadius}
+---
+
+Reply ONLY JSON: {"refuted": true|false}  — refuted=true means the objection does NOT hold.`;
+}
