@@ -1,7 +1,3 @@
-// @deterministic score: 96/100
-//   [minor] llm/intent-legibility  The file lacks a high-level doc comment summarizing its purpose or intent for new readers, relying only on the file name and exported structures to communicate its role. → Add a module-level JSDoc comment at the top of the file describing that this module defines and exports the `functionLength` static analysis rule (e.g., docblock above `import type { Rule, RuleIssue } from "../../core/rule.js";`).
-//   [info] static/function-length  function findFunctions is 51 lines — 1 over the 50-line cap → extract cohesive steps into smaller helper functions
-// @deterministic:end
 import type { Rule, RuleIssue } from "../../core/rule.js";
 
 const SOFT_CAP = 50; // lines per function body

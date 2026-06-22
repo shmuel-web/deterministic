@@ -1,5 +1,3 @@
-// @deterministic score: 100/100 — no issues
-// @deterministic:end
 import type { Rule } from "./src/core/rule.js";
 import { fileLength } from "./src/rules/static/file-length.js";
 import { missingTypes } from "./src/rules/static/missing-types.js";

@@ -1,6 +1,3 @@
-// @deterministic score: 97/100
-//   [minor] llm/intent-legibility  The main exported symbol, 'intentLegibility', lacks a clear doc comment explaining its role as the instantiated LLM rule object. While the file's general purpose is described in the preceding block, the specific constant needs documentation. → Add a dedicated JSDoc block immediately before `export const intentLegibility = llmRule({` describing that this constant defines the actual ruleset instance for checking intent legibility.
-// @deterministic:end
 import { llmRule } from "../../core/llm-rule.js";
 
 /**

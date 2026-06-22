@@ -1,5 +1,3 @@
-// @deterministic score: 100/100 — no issues
-// @deterministic:end
 import type { ModelClient } from "./rule.js";
 import type { Limit } from "./pool.js";
 
