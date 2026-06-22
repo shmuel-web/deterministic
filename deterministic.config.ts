@@ -8,6 +8,11 @@ import { hasCoverageTool } from "./src/rules/static/has-coverage-tool.js";
 import { ciRunsTests } from "./src/rules/static/ci-runs-tests.js";
 import { linterConfigured } from "./src/rules/static/linter-configured.js";
 import { ciRunsLint } from "./src/rules/static/ci-runs-lint.js";
+import { hasAgentContext } from "./src/rules/static/has-agent-context.js";
+import { tsconfigStrict } from "./src/rules/static/tsconfig-strict.js";
+import { lockfileCommitted } from "./src/rules/static/lockfile-committed.js";
+import { licensePresent } from "./src/rules/static/license-present.js";
+import { nodeVersionPinned } from "./src/rules/static/node-version-pinned.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
@@ -28,6 +33,11 @@ export const rules: Rule[] = [
   ciRunsTests,
   linterConfigured,
   ciRunsLint,
+  hasAgentContext,
+  tsconfigStrict,
+  lockfileCommitted,
+  licensePresent,
+  nodeVersionPinned,
 ];
 
 /** Project settings (the footprint is a guest — opt-out, default on). */
