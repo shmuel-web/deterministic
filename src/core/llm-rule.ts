@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 import { z } from "zod";
 import { RuleIssueSchema, type Rule, type RuleTarget, type Severity, type RuleIssue } from "./rule.js";
 

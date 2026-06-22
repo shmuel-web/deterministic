@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 import { PENALTY, type RuleIssue } from "./rule.js";
 
 /** An issue tagged with the rule that produced it. */

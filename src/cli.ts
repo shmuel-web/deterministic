@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The primary function, `main`, which serves as the command router and main entry point for the CLI application logic, lacks a doc comment explaining its operational role (parsing process arguments and dispatching commands). → Add a descriptive JSDoc block above the `main` function detailing that it reads `process.argv` to determine the user's desired action and coordinates calls to the imported command modules.
+// @deterministic:end
 import { init } from "./commands/init.js";
 import { scoreRepo } from "./commands/score-repo.js";
 import { scoreTicket } from "./commands/score-ticket.js";

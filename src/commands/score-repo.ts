@@ -1,3 +1,5 @@
+// @deterministic score: 100/100 — no issues
+// @deterministic:end
 /**
  * `deterministic score repo` — the cheap, performant repo score: compose from
  * the in-file annotations `init` wrote, re-scoring only changed files. No
