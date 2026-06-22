@@ -1,6 +1,8 @@
 import { scoreManyFiles, runRepoRules } from "./score-file.js";
 import { inGitRepo, headSha, listSourceFiles } from "../core/git.js";
 import { loadIndex, saveIndex, record, repoScore, type RepoIndex } from "../core/index-store.js";
+import { writeSurfaces } from "../core/report.js";
+import { settings } from "../../deterministic.config.js";
 
 /**
  * `deterministic init` — the expensive first run: score & annotate EVERY source
@@ -19,6 +21,7 @@ export async function init(): Promise<void> {
   index.repoIssues = await runRepoRules();
   await saveIndex(index);
 
+  if (settings.writeSurfaces) await writeSurfaces(index, repoScore(index, files.length), files.length);
   summarize(results.length, index, files.length);
 }
 

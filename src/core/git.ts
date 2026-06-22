@@ -26,7 +26,7 @@ export function headSha(): string {
 
 // Vendored tooling / generated output we never score by default. (A configurable
 // include/exclude is a follow-up; this is the ESLint-style "ignore by default".)
-const DEFAULT_EXCLUDE = [".claude/", ".specify/", "dist/", "node_modules/", ".deterministic/"];
+const DEFAULT_EXCLUDE = [".claude/", ".specify/", "dist/", "node_modules/", ".deterministic/", "DETERMINISTIC.md"];
 
 /** Files we actually score: a known comment style, and not in an excluded path. */
 function isScorable(path: string): boolean {

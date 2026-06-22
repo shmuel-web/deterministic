@@ -25,3 +25,9 @@ export const rules: Rule[] = [
   hasCoverageTool,
   ciRunsTests,
 ];
+
+/** Project settings (the footprint is a guest — opt-out, default on). */
+export const settings = {
+  /** Write DETERMINISTIC.md + the one-line README score block on init / score repo. */
+  writeSurfaces: true,
+};

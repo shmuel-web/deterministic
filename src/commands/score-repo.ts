@@ -1,7 +1,9 @@
 import { scoreManyFiles, runRepoRules } from "./score-file.js";
 import { summarize } from "./init.js";
 import { inGitRepo, headSha, changedSince, listSourceFiles } from "../core/git.js";
-import { loadIndex, saveIndex, record, remove } from "../core/index-store.js";
+import { loadIndex, saveIndex, record, remove, repoScore } from "../core/index-store.js";
+import { writeSurfaces } from "../core/report.js";
+import { settings } from "../../deterministic.config.js";
 
 /**
  * `deterministic score repo` — the cheap, incremental repo score. Re-scores only
@@ -31,5 +33,7 @@ export async function scoreRepo(): Promise<void> {
   index.lastSha = headSha();
   await saveIndex(index);
 
-  summarize(changed.length, index, listSourceFiles().length);
+  const total = listSourceFiles().length;
+  if (settings.writeSurfaces) await writeSurfaces(index, repoScore(index, total), total);
+  summarize(changed.length, index, total);
 }
