@@ -61,7 +61,8 @@ discover (git ls-files, ignore vendored)
 core/   rule (contract) · score (penalty sum) · orchestrator (gather+run)
         annotation (in-file) · index-store (cache) · git (change detection)
         model (Ollama→API) · llm-rule (scoped scaffold) · pool (concurrency) · comment-style
-rules/  static/* · llm/*          commands/  init · score-repo · score-ticket · validate-ticket · score-file
+rules/  static/* · llm/*          commands/  init · score-repo · validate-ticket · score-file
+ticket/ score-ticket · rules/* (has-dod · unmeasurable-goal · undefined-validation-path) — own module (ADR-0001)
 ```
 
 ## Module boundaries (separable by design — see ADR 0001)

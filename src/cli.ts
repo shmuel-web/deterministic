@@ -4,7 +4,7 @@
 // @deterministic:end
 import { init } from "./commands/init.js";
 import { scoreRepo } from "./commands/score-repo.js";
-import { scoreTicket } from "./commands/score-ticket.js";
+import { scoreTicket } from "./ticket/score-ticket.js";
 import { validateTicket } from "./commands/validate-ticket.js";
 import { scoreFile } from "./commands/score-file.js"; // internal/dev only
 
