@@ -28,6 +28,7 @@ Re-running produces the same band for unchanged code. The agent's *choice* of co
 - **FR-006**: Agentic execution rules run only on `init` / `validate` (NOT every `score repo`) — they're expensive.
 - **FR-007**: Coexists with the static `coverage-threshold` (#71): if a report exists, the static/fast path owns it; the agent only runs when discovery is needed. No double-count.
 - **FR-008**: A malformed agent response or a failed command degrades to **no issue** (never crash, never fabricate).
+- **FR-009 (staleness)**: A coverage report is **stale** if any tracked code file was modified after it was generated (mtime). A stale report's number MUST NOT be trusted. The two coverage rules partition by execution mode: **execution OFF** → the static rule bands a *fresh* report and *flags* a stale one ("re-run coverage"); **execution ON** → the agentic rule uses a fresh report as-is and **re-runs** when the report is stale or absent. Exactly one fires in each mode (no double-count).
 
 ## Key Entities
 - **safeExec** — the sandboxed command runner (allowlist + timeout + no-throw).
