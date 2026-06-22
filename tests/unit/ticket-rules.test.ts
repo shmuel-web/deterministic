@@ -50,6 +50,13 @@ test("dod-quality (#25) is wired into the ticket rules as a scoped llm rule", ()
   assert.equal(r!.type, "llm");
 });
 
+test("missing-context is wired into the ticket rules as a scoped llm rule", () => {
+  const r = ticketRules.find((x) => x.id === "llm/missing-context");
+  assert.ok(r, "missing-context must be registered in ticketRules");
+  assert.equal(r!.target, "ticket");
+  assert.equal(r!.type, "llm");
+});
+
 test("composition: a contentless ticket scores low from own rules alone (SC-001)", async () => {
   // static fires (no DoD); stub LLM rules each find one major.
   const issues = await runRules(ticketRules, ctx("To the moon 🚀🌕💸"), {
