@@ -18,6 +18,7 @@ import { ciRunsTypecheck } from "./src/rules/static/ci-runs-typecheck.js";
 import { gitignoreSane } from "./src/rules/static/gitignore-sane.js";
 import { readmeContext } from "./src/rules/static/readme-context.js";
 import { agentRunsDeterministic } from "./src/rules/static/agent-runs-deterministic.js";
+import { enforcesDeterministic } from "./src/rules/static/enforces-deterministic.js";
 import { coverageThreshold } from "./src/rules/static/coverage-threshold.js";
 import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
 
@@ -50,6 +51,7 @@ export const rules: Rule[] = [
   gitignoreSane,
   readmeContext,
   agentRunsDeterministic,
+  enforcesDeterministic,
   coverageThreshold,
   coverageAgentic,
 ];
