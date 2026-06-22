@@ -1,5 +1,3 @@
-// @deterministic score: 100/100 — no issues
-// @deterministic:end
 import { promises as fs } from "node:fs";
 import type { RuleTarget, Severity } from "./rule.js";
 import type { IdentifiedIssue } from "./score.js";

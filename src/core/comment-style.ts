@@ -1,5 +1,3 @@
-// @deterministic score: 100/100 — no issues
-// @deterministic:end
 import path from "node:path";
 
 /** How a file expresses comments — line-prefixed or block-delimited. */
