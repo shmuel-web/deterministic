@@ -6,10 +6,11 @@ import { RuleIssueSchema } from "../../core/rule.js";
 import { settings } from "../../core/settings.js";
 import { inGitRepo, listSourceFiles } from "../../core/git.js";
 import { resolveBlastRadius } from "../scout.js";
-import { PANEL_REVIEWERS, buildReviewerPrompt, buildGatePrompt, type Reviewer } from "./reviewers.js";
+import { PANEL_REVIEWERS, buildReviewerPrompt, buildGatePrompt, buildDefenderPrompt, type Reviewer } from "./reviewers.js";
 
 type BlastFile = { path: string; content: string };
 const AppliesSchema = z.object({ applies: z.boolean() });
+const RefutedSchema = z.object({ refuted: z.boolean() });
 
 /**
  * The agentic ticket-review panel (spec 004) as ONE `Rule` (`target: ticket`).
@@ -61,6 +62,19 @@ function citesBlastRadius(issue: RuleIssue, files: BlastFile[]): boolean {
   return files.some((f) => hay.includes(f.path.toLowerCase()) || hay.includes(path.posix.basename(f.path).toLowerCase()));
 }
 
+/** Adversarial Defender (FR-006): keep an issue only if it survives a refutation attempt. */
+async function survivesDefender(issue: RuleIssue, ticket: string, blastRadius: string, model: ModelClient): Promise<boolean> {
+  const strict = settings.review.defender !== "lenient";
+  const match = (await model.complete(buildDefenderPrompt(issue.problem, issue.fix, ticket, blastRadius, strict))).match(/\{[\s\S]*\}/);
+  if (!match) return true; // unparseable → keep (don't drop an already-vetted issue on a parse error)
+  try {
+    const parsed = RefutedSchema.safeParse(JSON.parse(match[0]));
+    return parsed.success ? !parsed.data.refuted : true;
+  } catch {
+    return true;
+  }
+}
+
 /** Read the content of the ticket's blast-radius files, bounded by settings. */
 async function gatherBlastRadius(ticket: string): Promise<BlastFile[]> {
   if (!inGitRepo()) return [];
@@ -98,10 +112,18 @@ async function runReviewer(reviewer: Reviewer, ticket: string, blastRadius: stri
   if (!issues) return []; // unparseable after retry → don't fabricate (Principle VI)
 
   // 3. evidence filter — drop anything not grounded in a blast-radius file.
-  // 4. cap severity + attribute to the reviewer.
-  return issues
-    .filter((i) => citesBlastRadius(i, files))
-    .map((i) => ({ problem: `[${reviewer.name}] ${i.problem}`, fix: i.fix, severity: capSeverity(i.severity) }));
+  const grounded = issues.filter((i) => citesBlastRadius(i, files));
+
+  // 4. adversarial Defender — each grounded issue must survive a refutation.
+  const survivors =
+    settings.review.defender === "off"
+      ? grounded
+      : (await Promise.all(grounded.map(async (i) => ((await survivesDefender(i, ticket, blastRadius, model)) ? i : null)))).filter(
+          (i): i is RuleIssue => i !== null,
+        );
+
+  // 5. cap severity + attribute to the reviewer.
+  return survivors.map((i) => ({ problem: `[${reviewer.name}] ${i.problem}`, fix: i.fix, severity: capSeverity(i.severity) }));
 }
 
 export const reviewPanel: Rule = {

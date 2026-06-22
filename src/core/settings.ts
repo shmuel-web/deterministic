@@ -25,5 +25,13 @@ export const settings = {
     /** Cap the blast-radius context fed to reviewers, to bound prompt size/cost. */
     maxFiles: 6,
     maxBytesPerFile: 4_000,
+    /**
+     * Adversarial Defender (spec 004, FR-006): challenges each drafted issue,
+     * keeping only those that survive. The anti-overshoot knob:
+     *   "strict"  — high bar; refute unless concretely material (default).
+     *   "lenient" — only refute the clearly-spurious.
+     *   "off"     — no Defender pass (for ablation / measuring its effect).
+     */
+    defender: "strict" as "strict" | "lenient" | "off",
   },
 };
