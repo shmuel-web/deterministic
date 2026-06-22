@@ -35,6 +35,7 @@ test:
     - if: '$CI_COMMIT_BRANCH'
   script:
     - npm ci
+    - npm run lint
     - npm run typecheck
     - npx c8 --reporter=text --reporter=lcov npm test
 

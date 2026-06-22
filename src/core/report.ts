@@ -59,7 +59,7 @@ export function stripReadmeBlock(content: string): string {
   if (start === -1) return content;
   const end = content.indexOf(RM_END, start);
   if (end === -1) return content;
-  let cut = content.slice(0, start) + content.slice(end + RM_END.length);
+  const cut = content.slice(0, start) + content.slice(end + RM_END.length);
   return cut.replace(/\n{3,}/g, "\n\n").replace(/\s+$/, "\n");
 }
 
