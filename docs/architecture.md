@@ -58,8 +58,22 @@ core/   rule (contract) · score (penalty sum) · orchestrator (gather+run)
 rules/  static/* · llm/*          commands/  init · score-repo · score-ticket · validate-ticket · score-file
 ```
 
+## Module boundaries (separable by design — see ADR 0001)
+Code scoring and ticket scoring run in different homes (dev machine vs CI/action),
+so they're kept decoupled to allow shipping them as two tools later:
+```
+core/    shared kernel (contract, scoring, llm-rule, model, pool, orchestrator)
+code/    file+repo scoring (dev machine)        ┐ depend only on core,
+ticket/  ticket scoring (CI/action)             ┘ NEVER on each other
+cli.ts   thin umbrella — the only place they meet, discardable on a split
+```
+**Enforced hard rule:** no imports between `code/` and `ticket/` (either direction);
+both import `core/` only. A CI boundary check fails the build on violation. Splitting
+later = lift `ticket/` + `core/` into their own package/repo, drop the umbrella.
+
 ## Properties that matter
 auditable · count-invariant scoring · incremental (git) · language-agnostic contract ·
-community-extensible rules · local-first / zero-permission · spec-driven (Spec-Kit).
+community-extensible rules · local-first / zero-permission · spec-driven (Spec-Kit) ·
+**separable modules** (code-scoring vs ticket-scoring).
 
 **Stack:** TypeScript/Node, Zod, Mastra (agent orchestration), Ollama + Gemma 4, git.
