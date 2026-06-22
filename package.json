@@ -16,7 +16,7 @@
     "dev": "tsx src/cli.ts",
     "deterministic": "tsx src/cli.ts",
     "test": "tsx --test tests/contract/*.test.ts tests/unit/*.test.ts tests/integration/*.test.ts",
-    "coverage": "c8 --reporter=text --reporter=lcov npm test",
+    "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary npm test",
     "lint": "eslint ."
   },
   "dependencies": {
