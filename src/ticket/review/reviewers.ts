@@ -19,6 +19,12 @@ export interface Reviewer {
   lookFor: string;
   /** What this reviewer must NOT flag (another persona's job). */
   nonGoals: string;
+  /**
+   * Evidence grounding. "file": issues must cite a blast-radius file (technical
+   * reviewers reading the code). "ticket": scope-level concerns about the ticket
+   * itself — no file citation required (the evidence filter is skipped).
+   */
+  grounding: "file" | "ticket";
 }
 
 export const architect: Reviewer = {
@@ -31,6 +37,7 @@ export const architect: Reviewer = {
 - a risky or irreversible change with no rollback / rollout plan
 - a data-integrity or cross-module impact the touched files reveal`,
   nonGoals: "line-level code style, test coverage, scope or process — those are other reviewers' jobs",
+  grounding: "file",
 };
 
 export const implementationDeveloper: Reviewer = {
@@ -43,6 +50,7 @@ export const implementationDeveloper: Reviewer = {
 - an unstated ordering or dependency between the files being changed`,
   nonGoals:
     "system architecture (migrations, feature flags, compatibility, rollout, data integrity), test coverage, or scope/process — those are other reviewers' jobs",
+  grounding: "file",
 };
 
 export const qa: Reviewer = {
@@ -55,10 +63,23 @@ export const qa: Reviewer = {
 - test data / fixtures the verification would need but aren't provided`,
   nonGoals:
     "whether the design is sound (migrations, architecture), how the code is implemented, or scope/process — those are other reviewers' jobs",
+  grounding: "file",
 };
 
-/** The panel, in order. Grows in #83 (Lead PM). */
-export const PANEL_REVIEWERS: Reviewer[] = [architect, implementationDeveloper, qa];
+export const leadPm: Reviewer = {
+  name: "PM",
+  role: "a lead product manager",
+  concern: "is this one right, shippable unit of work?",
+  lookFor: `- several unrelated deliverables bundled into one ticket (it should be split)
+- the user / business OUTCOME is unstated — it's not clear why this is being done
+- a cross-team or cross-ticket dependency that isn't linked
+- a user-facing change with no docs / comms / rollout consideration`,
+  nonGoals: "technical implementation, architecture, or test details — those are other reviewers' jobs",
+  grounding: "ticket",
+};
+
+/** The full panel. */
+export const PANEL_REVIEWERS: Reviewer[] = [architect, implementationDeveloper, qa, leadPm];
 
 /**
  * Build a reviewer's drafting prompt. The guardrails ARE the design: silence by
@@ -79,10 +100,14 @@ You are given the ticket AND the current content of the files this ticket would 
 RULES — read carefully:
 - The ticket is COMPLETE until you can prove a SPECIFIC, MATERIAL gap. "Nothing to report" is the expected, common, correct answer. There is NO reward for finding something. Never invent an issue to seem useful. Never praise.
 - Only raise an issue if (a) your concern actually APPLIES to this change, and (b) it is MATERIAL — skipping it would cause a bug, a broken deploy, or a failed validation.
-- Every issue MUST cite a specific blast-radius file (and the fact in it) and give a concrete fix. If you cannot cite a file, do NOT raise it.
+${
+  reviewer.grounding === "file"
+    ? "- Every issue MUST cite a specific blast-radius file (and the fact in it) and give a concrete fix. If you cannot cite a file, do NOT raise it."
+    : "- Every issue MUST point to the specific part of the TICKET it concerns (the bundled items, the missing outcome, the unlinked dependency) and give a concrete fix."
+}
 - If nothing material applies, return {"issues": []}.
 
-Return ONLY JSON: {"issues":[{"problem":"<specific; names the file>","fix":"<concrete>","severity":"info|minor"}]}
+Return ONLY JSON: {"issues":[{"problem":"<specific>","fix":"<concrete>","severity":"info|minor"}]}
 
 TICKET:
 ---
@@ -128,10 +153,18 @@ export function buildDefenderPrompt(
   ticket: string,
   blastRadius: string,
   strict: boolean,
+  grounding: "file" | "ticket" = "file",
 ): string {
-  return `You are defending a development ticket against a reviewer's objection. Judge HONESTLY whether the objection identifies a REAL, MATERIAL gap that must be addressed before work starts — or whether it is already implied by the ticket, out of scope, handled elsewhere, or merely a matter of taste.
+  // The materiality bar matches the reviewer's lens: code-material for technical
+  // reviewers; delivery/scope-material for ticket-level (PM) concerns — otherwise
+  // a code-focused Defender dismisses every scope concern as "process/taste".
+  const material =
+    grounding === "ticket"
+      ? "a REAL delivery problem — the ticket is genuinely mis-scoped (unrelated work bundled together), its outcome is unclear, or a needed dependency/context is missing, such that an implementer would be confused or the work would need rework"
+      : "a REAL, MATERIAL gap that must be addressed before work starts — skipping it would cause a bug, a broken deploy, or a failed validation";
+  return `You are defending a development ticket against a reviewer's objection. Judge HONESTLY whether the objection identifies ${material} — or whether it is already implied by the ticket, out of scope, handled elsewhere, or merely a matter of taste.
 
-${strict ? "Hold a HIGH bar: default to REFUTED unless the objection names a concrete, material defect with a clear, necessary fix." : "Refute only objections that are clearly spurious, redundant, or out of scope."}
+${strict ? "Hold a HIGH bar: default to REFUTED unless the objection is concrete and clearly justified." : "Refute only objections that are clearly spurious, redundant, or out of scope."}
 
 OBJECTION
   problem: ${problem}
