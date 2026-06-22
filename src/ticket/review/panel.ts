@@ -44,6 +44,55 @@ function capSeverity(s: Severity): Severity {
   return s === "info" ? "info" : "minor";
 }
 
+const SEV_RANK: Record<Severity, number> = { info: 0, minor: 1, major: 2, critical: 3 };
+const DEDUP_THRESHOLD = 0.5; // Jaccard token overlap above which two issues are "the same gap"
+const STOP = /^\[([^\]]+)\]\s*/; // the "[Reviewer] " attribution prefix
+
+/** Split "[Architect] body" → { reviewer, body }. */
+function splitTag(problem: string): { reviewer: string; body: string } {
+  const m = problem.match(STOP);
+  return m ? { reviewer: m[1]!, body: problem.slice(m[0].length) } : { reviewer: "", body: problem };
+}
+
+/** Significant tokens (letters, length ≥ 4) for similarity — ignores the reviewer tag. */
+function tokens(text: string): Set<string> {
+  return new Set((text.toLowerCase().match(/\p{L}{4,}/gu) ?? []));
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let shared = 0;
+  for (const t of a) if (b.has(t)) shared++;
+  return shared / (a.size + b.size - shared);
+}
+
+/**
+ * Synthesizer (spec 004, FR-007): pool every reviewer's survivors, collapse
+ * cross-reviewer near-duplicates (e.g. Architect + PM both flag "no rollback")
+ * into ONE issue — merging attribution and keeping the worst severity — and bias
+ * toward fewer. Deterministic (token-overlap, no model). Empty in → empty out, so
+ * the panel contributes no penalty when nothing survives.
+ */
+export function synthesize(issues: RuleIssue[]): RuleIssue[] {
+  const groups: { sig: Set<string>; issue: RuleIssue; reviewers: string[] }[] = [];
+  for (const raw of issues) {
+    const { reviewer, body } = splitTag(raw.problem);
+    const sig = tokens(`${body} ${raw.fix}`);
+    const dup = groups.find((g) => jaccard(g.sig, sig) >= DEDUP_THRESHOLD);
+    if (dup) {
+      if (reviewer && !dup.reviewers.includes(reviewer)) dup.reviewers.push(reviewer);
+      if (SEV_RANK[raw.severity] > SEV_RANK[dup.issue.severity]) dup.issue = raw; // keep the worst
+    } else {
+      groups.push({ sig, issue: raw, reviewers: reviewer ? [reviewer] : [] });
+    }
+  }
+  return groups.map((g) => {
+    const { body } = splitTag(g.issue.problem);
+    const tag = g.reviewers.length ? `[${g.reviewers.join(", ")}] ` : "";
+    return { problem: `${tag}${body}`, fix: g.issue.fix, severity: g.issue.severity };
+  });
+}
+
 /** Applicability gate (FR-004): does this reviewer's concern apply at all? */
 async function applies(reviewer: Reviewer, ticket: string, blastRadius: string, model: ModelClient): Promise<boolean> {
   const match = (await model.complete(buildGatePrompt(reviewer, ticket, blastRadius))).match(/\{[\s\S]*\}/);
@@ -142,6 +191,6 @@ export const reviewPanel: Rule = {
 
     const blastRadius = files.map((f) => `=== ${f.path} ===\n${f.content}`).join("\n\n");
     const perReviewer = await Promise.all(PANEL_REVIEWERS.map((r) => runReviewer(r, ticket, blastRadius, files, model)));
-    return { issues: perReviewer.flat() };
+    return { issues: synthesize(perReviewer.flat()) };
   },
 };
