@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+#
+# Deterministic — score the repo before every push.
+#
+# Runs the cheap, incremental `score repo` (only the files changed since the last
+# scored commit), so the repo score and the in-file annotations stay fresh and a
+# regression is seen at push time, not weeks later. This hook is also what makes
+# the repo satisfy the `enforces-deterministic` rule (a machine runs the linter).
+#
+# Wired via `git config core.hooksPath .githooks` (done by the package.json
+# `prepare` script on `npm install`). Skip a one-off push with `--no-verify`.
+
+echo "deterministic: scoring repo before push…"
+
+if [ ! -f .deterministic/index.json ]; then
+  echo "deterministic: no baseline index yet — run 'npm run deterministic:baseline' once, then pushes will score incrementally. (skipping)"
+  exit 0
+fi
+
+if ! npm run --silent score:repo; then
+  echo "deterministic: scoring failed — fix the error above, or push with --no-verify to skip."
+  exit 1
+fi
+
+# `score repo` may have refreshed annotations / README / DETERMINISTIC.md.
+# We don't block the push on that (the LLM prose can vary run-to-run); just nudge.
+if ! git diff --quiet -- README.md DETERMINISTIC.md "*.ts" 2>/dev/null; then
+  echo "deterministic: annotations/score were refreshed — review and commit them when convenient."
+fi
+
+exit 0

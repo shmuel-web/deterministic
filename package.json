@@ -15,9 +15,12 @@
     "typecheck": "tsc --noEmit",
     "dev": "tsx src/cli.ts",
     "deterministic": "tsx src/cli.ts",
+    "score:repo": "tsx src/cli.ts score repo",
+    "deterministic:baseline": "tsx src/cli.ts init",
     "test": "tsx --test tests/contract/*.test.ts tests/unit/*.test.ts tests/integration/*.test.ts",
     "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary npm test",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "zod": "^3.23.8"
