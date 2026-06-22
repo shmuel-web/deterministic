@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The file lacks a high-level doc comment indicating its overall purpose, requiring readers to deduce that this module is responsible for calculating scores from detected issues. → Add a JSDoc block at the top of the file (before imports) summarizing that the module's role is determining final target scores based on accumulated rule issues and penalties.
+// @deterministic:end
 import { PENALTY, type RuleIssue } from "./rule.js";
 
 /** An issue tagged with the rule that produced it. */

@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The primary exported function, `llmRule(spec: LlmRuleSpec): Rule`, lacks a doc comment explaining its purpose. A reader cannot immediately tell what this function does or how it constructs the rule object. → Add a JSDoc block above `export function llmRule(spec: LlmRuleSpec): Rule` that explains that this function acts as a factory to create and encapsulate a runnable code review rule tailored specifically for LLM interactions, based on provided specifications.
+// @deterministic:end
 import { z } from "zod";
 import { RuleIssueSchema, type Rule, type RuleTarget, type Severity, type RuleIssue } from "./rule.js";
 

@@ -1,3 +1,7 @@
+// @deterministic score: 96/100
+//   [minor] llm/intent-legibility  The main exported symbol, `functionLength`, is missing a doc comment that explains its purpose as a static analysis rule. → Add a JSDoc block immediately preceding the declaration of `export const functionLength` detailing what this specific rule checks (e.g., stating it flags functions exceeding the SOFT_CAP lines).
+//   [info] static/function-length  function findFunctions is 51 lines — 1 over the 50-line cap → extract cohesive steps into smaller helper functions
+// @deterministic:end
 import type { Rule, RuleIssue } from "../../core/rule.js";
 
 const SOFT_CAP = 50; // lines per function body
