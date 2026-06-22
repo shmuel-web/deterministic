@@ -41,8 +41,8 @@ async function main(): Promise<void> {
       if (sub === "ticket") await validateTicket(rest[0]);
       else unknown(`validate ${sub ?? ""}`.trim());
       break;
-    case "file": // internal/dev: score a single file directly
-      await scoreFile(sub);
+    case "file": // internal/dev: score one or many files (fanned out, capped)
+      await scoreFile([sub, ...rest].filter(Boolean) as string[]);
       break;
     case undefined:
     case "help":
