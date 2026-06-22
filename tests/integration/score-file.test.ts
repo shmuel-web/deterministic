@@ -42,15 +42,33 @@ test("score-file writes an issue-list annotation, idempotent and non-destructive
   await fs.rm(dir, { recursive: true, force: true });
 });
 
-test("a clean file (no issues) annotates with score 100 and no issue lines", async () => {
+test("a clean file gets NO annotation block (absence = 100)", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "det-"));
   const file = path.join(dir, "clean.ts");
-  await fs.writeFile(file, "export const ok = 1;\n", "utf8");
+  const original = "export const ok = 1;\n";
+  await fs.writeFile(file, original, "utf8");
 
   const cleanModel: ModelClient = { complete: async () => '{"issues": []}' };
   await scoreFile(file, cleanModel);
   const out = await fs.readFile(file, "utf8");
 
-  assert.match(out, /@deterministic score:\s*100\/100 — no issues/);
+  assert.doesNotMatch(out, /@deterministic/, "clean files must not carry a block");
+  assert.equal(out, original, "clean file is left byte-for-byte untouched");
+  await fs.rm(dir, { recursive: true, force: true });
+});
+
+test("a previously-flagged file that becomes clean has its stale block removed", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "det-"));
+  const file = path.join(dir, "f.ts");
+  const original = "export const ok = 1;\n";
+  await fs.writeFile(file, original, "utf8");
+
+  const flag: ModelClient = { complete: async () => '{"issues":[{"problem":"x","fix":"y","severity":"minor"}]}' };
+  await scoreFile(file, flag);
+  assert.match(await fs.readFile(file, "utf8"), /@deterministic/); // block present
+
+  const clean: ModelClient = { complete: async () => '{"issues": []}' };
+  await scoreFile(file, clean);
+  assert.equal(await fs.readFile(file, "utf8"), original, "stale block removed, source restored");
   await fs.rm(dir, { recursive: true, force: true });
 });

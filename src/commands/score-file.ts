@@ -40,20 +40,25 @@ function print(r: FileScore): void {
 }
 
 /**
- * Hidden `deterministic file <path...>` dev command. Scores one or many files,
- * fanning out across files with a single shared concurrency limiter so in-flight
- * LLM calls never exceed the cap (issue #63). Tests inject a stub model.
+ * Score many files, fanning out with ONE shared concurrency limiter so in-flight
+ * LLM calls never exceed the cap (issue #63) — the reusable core that `init` and
+ * `score repo` build on. Resolves the model once and shares it.
+ */
+export async function scoreManyFiles(files: string[], modelOverride?: ModelClient): Promise<FileScore[]> {
+  const base = modelOverride ?? (await resolveModel());
+  const limit = createLimiter(defaultConcurrency());
+  const model = base ? withConcurrencyLimit(base, limit) : null;
+  return Promise.all(files.map((f) => scoreOneFile(f, model)));
+}
+
+/**
+ * Hidden `deterministic file <path...>` dev command. Scores one or many files
+ * and prints each result. Tests inject a stub model.
  */
 export async function scoreFile(paths?: string | string[], modelOverride?: ModelClient): Promise<void> {
   const files = (Array.isArray(paths) ? paths : paths ? [paths] : []).filter(Boolean);
   if (files.length === 0) throw new Error("usage: deterministic file <path...>");
-
-  const base = modelOverride ?? (await resolveModel());
-  // One limiter shared across every file and rule → a single global LLM cap.
-  const limit = createLimiter(defaultConcurrency());
-  const model = base ? withConcurrencyLimit(base, limit) : null;
-
-  const results = await Promise.all(files.map((f) => scoreOneFile(f, model)));
+  const results = await scoreManyFiles(files, modelOverride);
   for (const r of results) print(r);
   console.log("");
 }
