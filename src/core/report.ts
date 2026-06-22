@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The exported symbol `writeSurfaces` suggests coordinating multiple general 'surfaces,' but its functionality is highly specific: it writes to two distinct output files, `DETERMINISTIC.md` and `README.md`. This generic name diminishes clarity about the function's concrete side effects. → Rename `export async function writeSurfaces(...)` to `export async function updateReportAndReadme(...)` to explicitly signal that both primary report output files are managed within this single function call.
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import { score } from "./score.js";
 import type { RepoIndex } from "./index-store.js";

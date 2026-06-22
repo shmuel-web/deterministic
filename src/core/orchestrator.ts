@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  There is no explicit top-level comment describing the module's overall purpose (orchestration and execution flow). → Add a module-level JSDoc block at the very top of the file, such as: /** * Module for orchestrating the running of multiple structured rules against a given context. It manages rule application, error isolation, and aggregation of resulting issues. */
+// @deterministic:end
 import type { ModelClient, Rule, RuleContext } from "./rule.js";
 import { RuleResultSchema } from "./rule.js";
 import type { IdentifiedIssue } from "./score.js";

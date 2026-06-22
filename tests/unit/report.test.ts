@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  There is no indication anywhere of what the file is for, making its purpose unclear to new readers. → Add a comprehensive doc comment (JSDoc or similar) at the top of the file describing that this test suite validates the core functionality of report generation and Markdown manipulation utilities provided by `src/core/report.js`.
+// @deterministic:end
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { renderReport, renderReadmeBlock, stripReadmeBlock } from "../../src/core/report.js";

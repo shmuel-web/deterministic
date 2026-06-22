@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The primary exported constant `hasCoverageTool` lacks a doc comment describing its role as a rule object. → Add a JSDoc block immediately above `export const hasCoverageTool: Rule = { ... }` that explicitly states the purpose of this export, e.g., 'Rule used to check for configuration of code coverage tools (c8, nyc, etc.) within the project repository.'
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Rule } from "../../core/rule.js";

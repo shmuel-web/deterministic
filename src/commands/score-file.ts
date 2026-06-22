@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The file is missing a module-level JSDoc summarizing its overall purpose. While all exported functions have descriptions, there is no immediate indication at the top of the file regarding what utilities provided within this file accomplish (e.g., 'Provides core logic and entry points for scoring files and repositories against deterministic rules'). → Add a module-level JSDoc comment immediately after the imports to summarize the file's role in the system, clarifying that it handles running rule sets and generating actionable scores for code artifacts.
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import { rules } from "../../deterministic.config.js";
 import { runRules } from "../core/orchestrator.js";

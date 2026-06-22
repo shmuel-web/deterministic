@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  There is no high-level, guiding description (module JSDoc) at the top of the file explaining its overall purpose: mapping file extensions to known comment syntaxes. → Add a comprehensive module doc block immediately after imports and before `export type CommentStyle` that summarizes the file's role, such as: "Defines structured types and functions used to determine standard comment styles based on programming language file extensions."
+// @deterministic:end
 import path from "node:path";
 
 /** How a file expresses comments — line-prefixed or block-delimited. */

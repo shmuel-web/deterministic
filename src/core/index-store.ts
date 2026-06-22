@@ -1,3 +1,7 @@
+// @deterministic score: 94/100
+//   [minor] llm/intent-legibility  The file lacks a top-level doc block that explains its overall purpose (intent). A reader cannot determine what this entire `index-store` module manages without reading through all implementations. → Add a descriptive multi-line doc comment at the very top of `src/core/index-store.ts` detailing that this file handles the persistent storage, loading, and saving of the deterministic repository score index (cache).
+//   [minor] llm/intent-legibility  The core exported function `loadIndex()` lacks a doc comment explaining what it does. Since this is responsible for retrieving the critical cached state, its purpose must be explicitly documented. → Add a JSDoc block immediately preceding `export async function loadIndex(): Promise<RepoIndex>` describing that this function reads and deserializes the index cache from disk (handling potential errors/missing files).
+// @deterministic:end
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { score } from "./score.js";

@@ -1,3 +1,8 @@
+// @deterministic score: 91/100
+//   [minor] llm/intent-legibility  The file lacks a module-level doc comment indicating its overall purpose (i.e., managing Git interactions for source code scope calculation), making it unclear at a glance what the entire file provides. → Add a high-level JSDoc block immediately before any exports, summarizing that this module handles interaction with Git to determine scorable files and changes within a repository context.
+//   [minor] llm/intent-legibility  The exported function `inGitRepo()` is missing documentation, hindering understanding of its usage and return value. → Add a JSDoc comment to `inGitRepo` detailing that it checks if the current working directory is inside a Git repository using 'git rev-parse --is-inside-work-tree'.
+//   [minor] llm/intent-legibility  The exported function `headSha()` is missing documentation, making its purpose unclear to a reader only judging by the name and code. → Add a JSDoc comment to `headSha` explaining that it retrieves the SHA hash of the current commit HEAD using 'git rev-parse HEAD'.
+// @deterministic:end
 import { execFileSync } from "node:child_process";
 import { getCommentStyle } from "./comment-style.js";
 

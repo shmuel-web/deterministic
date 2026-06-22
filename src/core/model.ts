@@ -1,3 +1,6 @@
+// @deterministic score: 97/100
+//   [minor] llm/intent-legibility  The file's primary exported function, `resolveModel`, lacks a comprehensive doc comment explaining its purpose and the fallback logic involved in model resolution (local -> user API -> null). → Add a detailed JSDoc block immediately above `export async function resolveModel(): Promise<ModelClient | null>` describing that this function attempts to resolve an available LLM client, prioritizing local Ollama instances before falling back to environment variable-based external APIs.
+// @deterministic:end
 import type { ModelClient } from "./rule.js";
 import type { Limit } from "./pool.js";
 
