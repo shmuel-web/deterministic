@@ -1,4 +1,4 @@
-import { scoreManyFiles } from "./score-file.js";
+import { scoreManyFiles, runRepoRules } from "./score-file.js";
 import { summarize } from "./init.js";
 import { inGitRepo, headSha, changedSince, listSourceFiles } from "../core/git.js";
 import { loadIndex, saveIndex, record, remove } from "../core/index-store.js";
@@ -26,6 +26,8 @@ export async function scoreRepo(): Promise<void> {
     for (const r of results) record(index, r.path, r.issues);
   }
 
+  // Repo-level rules are cheap (a few config reads) — always refresh them.
+  index.repoIssues = await runRepoRules();
   index.lastSha = headSha();
   await saveIndex(index);
 

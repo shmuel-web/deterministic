@@ -50,6 +50,16 @@ export async function scoreManyFiles(files: string[], modelOverride?: ModelClien
 }
 
 /**
+ * Run the repo-target rules once against the repo root and return their issues
+ * (tagged with ruleId). These inspect the project as a whole — tests, coverage,
+ * CI — rather than a single file.
+ */
+export async function runRepoRules(root = ".", modelOverride?: ModelClient): Promise<IdentifiedIssue[]> {
+  const model = modelOverride ?? (await resolveModel());
+  return runRules(rules, { target: "repo", path: root }, { model: model ?? undefined });
+}
+
+/**
  * Hidden `deterministic file <path...>` dev command. Scores one or many files
  * and prints each result. Tests inject a stub model.
  */

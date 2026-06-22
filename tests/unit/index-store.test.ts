@@ -11,13 +11,13 @@ const issue = (severity: IdentifiedIssue["severity"]): IdentifiedIssue => ({
 });
 
 test("clean files are never stored (absence = 100)", () => {
-  const idx: RepoIndex = { lastSha: null, problems: {} };
+  const idx: RepoIndex = { lastSha: null, problems: {}, repoIssues: [] };
   record(idx, "a.ts", []);
   assert.deepEqual(idx.problems, {});
 });
 
 test("flagged files are stored; going clean removes the record", () => {
-  const idx: RepoIndex = { lastSha: null, problems: {} };
+  const idx: RepoIndex = { lastSha: null, problems: {}, repoIssues: [] };
   record(idx, "a.ts", [issue("major")]);
   assert.ok(idx.problems["a.ts"]);
   record(idx, "a.ts", []); // re-scored, now clean
@@ -25,20 +25,27 @@ test("flagged files are stored; going clean removes the record", () => {
 });
 
 test("repoScore: all clean → 100, invariant to file count", () => {
-  const idx: RepoIndex = { lastSha: null, problems: {} };
+  const idx: RepoIndex = { lastSha: null, problems: {}, repoIssues: [] };
   assert.equal(repoScore(idx, 10), 100);
   assert.equal(repoScore(idx, 100000), 100);
 });
 
 test("repoScore averages in the flagged deficits", () => {
-  const idx: RepoIndex = { lastSha: null, problems: {} };
+  const idx: RepoIndex = { lastSha: null, problems: {}, repoIssues: [] };
   record(idx, "a.ts", [issue("critical")]); // file score 73 → deficit 27
   // 1 flagged of 10 files: (100*10 − 27) / 10 = 97.3 → 97
   assert.equal(repoScore(idx, 10), 97);
 });
 
+test("repoScore subtracts repo-level penalties (absolute, not averaged)", () => {
+  const idx: RepoIndex = { lastSha: null, problems: {}, repoIssues: [issue("major"), issue("minor")] };
+  // repo penalties = 9 (major) + 3 (minor) = 12 → 88, regardless of file count
+  assert.equal(repoScore(idx, 50), 88);
+  assert.equal(repoScore(idx, 5), 88);
+});
+
 test("deleted files drop out", () => {
-  const idx: RepoIndex = { lastSha: null, problems: { "a.ts": [issue("minor")] } };
+  const idx: RepoIndex = { lastSha: null, problems: { "a.ts": [issue("minor")] }, repoIssues: [] };
   remove(idx, "a.ts");
   assert.deepEqual(idx.problems, {});
 });
