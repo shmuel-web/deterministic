@@ -29,10 +29,16 @@ Rule { id, target: file|repo|ticket, type: static|llm, run(ctx) → { issues: [{
 Changing this shape is a MAJOR governance event; *adding rules is not*. Community
 rules are the extension point (and the moat).
 
-## Three targets, one engine
+## Three targets, one engine — and they COMPOSE
+The targets aren't independent; scores flow up a dependency chain:
+```
+file  ──(annotations + index)──▶  repo  ──┐
+                                           ├──▶  ticket
+file scores of the blast radius ──────────┘
+```
 - **file** — the atomic unit. The substrate everything composes from.
-- **repo** — composed from file results + git, not by re-reading the tree.
-- **ticket** — is the task well-specified enough to act on? (static "has a DoD" + LLM "is it any good").
+- **repo** — `aggregate of file scores + repo-level rules`. Composed from file results + git, not by re-reading the tree.
+- **ticket** — `its own rules (is it well-specified?) + its blast radius (the files it would change, inheriting their scores) + the repo score`. So to score a ticket you read the repo score *and* the touched files' scores. "A ticket is as complex as the files it's going to touch." `score ticket` **consumes** `score repo` / file scores — one-directional, never re-scores files itself (see specs/003-score-ticket).
 
 ## Pipeline (per file)
 ```
