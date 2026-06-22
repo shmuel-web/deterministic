@@ -17,6 +17,7 @@ import { noCommittedSecrets } from "./src/rules/static/no-committed-secrets.js";
 import { ciRunsTypecheck } from "./src/rules/static/ci-runs-typecheck.js";
 import { gitignoreSane } from "./src/rules/static/gitignore-sane.js";
 import { readmeContext } from "./src/rules/static/readme-context.js";
+import { agentRunsDeterministic } from "./src/rules/static/agent-runs-deterministic.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
@@ -46,6 +47,7 @@ export const rules: Rule[] = [
   ciRunsTypecheck,
   gitignoreSane,
   readmeContext,
+  agentRunsDeterministic,
 ];
 
 /** Project settings (the footprint is a guest — opt-out, default on). */
