@@ -24,11 +24,14 @@ interface Fixture {
   expect: "silent" | "flag";
   /** For `flag`: a blast-radius file the issue must cite. */
   citesFile?: string;
+  /** For `flag`: a reviewer that must be among those raising the issue (e.g. "QA"). */
+  byReviewer?: string;
 }
 
 const FIXTURES: Fixture[] = [
   { file: "examples/tickets/panel-clean.md", expect: "silent" },
   { file: "examples/tickets/panel-schema-no-migration.md", expect: "flag", citesFile: "index-store.ts" },
+  { file: "examples/tickets/panel-untested-behavior.md", expect: "flag", citesFile: "exec.ts", byReviewer: "QA" },
 ];
 
 const ROUNDS = Number(process.env.CALIBRATION_ROUNDS) || 1;
@@ -62,7 +65,9 @@ async function main(): Promise<void> {
       ok = counts.every((c) => c === 0);
     } else {
       const cites = (i: { problem: string }) => !fx.citesFile || i.problem.toLowerCase().includes(fx.citesFile.toLowerCase());
-      ok = lastIssues.length >= 1 && lastIssues.some(cites);
+      const tag = (i: { problem: string }) => i.problem.match(/^\[([^\]]+)\]/)?.[1] ?? "";
+      const byReviewer = (i: { problem: string }) => !fx.byReviewer || tag(i).includes(fx.byReviewer);
+      ok = lastIssues.length >= 1 && lastIssues.some((i) => cites(i) && byReviewer(i));
     }
 
     if (!ok) failures++;

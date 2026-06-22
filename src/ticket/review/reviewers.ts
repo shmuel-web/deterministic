@@ -45,8 +45,20 @@ export const implementationDeveloper: Reviewer = {
     "system architecture (migrations, feature flags, compatibility, rollout, data integrity), test coverage, or scope/process — those are other reviewers' jobs",
 };
 
-/** The panel, in order. Grows in #82–#83 (QA, Lead PM). */
-export const PANEL_REVIEWERS: Reviewer[] = [architect, implementationDeveloper];
+export const qa: Reviewer = {
+  name: "QA",
+  role: "a QA engineer",
+  concern: "how do we know this change is correct and actually done?",
+  lookFor: `- new or changed behavior in the touched files with NO test asked for
+- an edge or failure case that must be verified but the ticket doesn't call out
+- an acceptance condition with no concrete, checkable way to confirm it
+- test data / fixtures the verification would need but aren't provided`,
+  nonGoals:
+    "whether the design is sound (migrations, architecture), how the code is implemented, or scope/process — those are other reviewers' jobs",
+};
+
+/** The panel, in order. Grows in #83 (Lead PM). */
+export const PANEL_REVIEWERS: Reviewer[] = [architect, implementationDeveloper, qa];
 
 /**
  * Build a reviewer's drafting prompt. The guardrails ARE the design: silence by
