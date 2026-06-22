@@ -108,6 +108,20 @@ function insertAtTop(content: string, block: string): string {
  */
 export async function writeAnnotation(a: Annotation): Promise<void> {
   const style = getCommentStyle(a.path);
+
+  // Clean files carry NO block — absence means 100 (the score lives in the index).
+  // The annotation appears only when it has something worth saying.
+  if (a.issues.length === 0) {
+    if (!style) {
+      await fs.rm(`${a.path}.deterministic.md`, { force: true });
+      return;
+    }
+    const original = await fs.readFile(a.path, "utf8");
+    const stripped = stripAnnotation(original);
+    if (stripped !== original) await fs.writeFile(a.path, stripped, "utf8"); // remove a now-stale block
+    return;
+  }
+
   if (!style) {
     const block = renderBlock(a, { kind: "block", open: "<!--", close: "-->" });
     await fs.writeFile(`${a.path}.deterministic.md`, block + "\n", "utf8");
