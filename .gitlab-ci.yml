@@ -21,7 +21,22 @@ workflow:
     - if: '$CI_COMMIT_BRANCH'
 
 stages:
+  - test
   - board
+
+# --- Quality gate: typecheck + tests (with coverage) -------------------------
+# Makes "pipeline must succeed" a real merge gate, and satisfies our own repo
+# rules (ci-runs-tests + has-coverage-tool).
+test:
+  stage: test
+  image: node:22
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+  script:
+    - npm ci
+    - npm run typecheck
+    - npx c8 --reporter=text --reporter=lcov npm test
 
 # --- In Progress: a branch was pushed or an MR was opened for an issue -------
 board:in_progress:

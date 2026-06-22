@@ -17,3 +17,6 @@ dist/
 
 # local annotation store
 .deterministic/
+
+# coverage output
+coverage/
