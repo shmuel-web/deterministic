@@ -4,6 +4,7 @@ import { ticketHasDod } from "./rules/ticket-has-dod.js";
 import { dodQuality } from "./rules/dod-quality.js";
 import { unmeasurableGoal } from "./rules/unmeasurable-goal.js";
 import { undefinedValidationPath } from "./rules/undefined-validation-path.js";
+import { missingContext } from "./rules/missing-context.js";
 
 /**
  * The ticket module's OWN rule registry — the specification-quality dimension
@@ -15,4 +16,11 @@ import { undefinedValidationPath } from "./rules/undefined-validation-path.js";
  * code side never imports this — see ADR-0001. The blast-radius / execution-risk
  * dimension (FR-003/004) composes on top of these via the Scout, later.
  */
-export const ticketRules: Rule[] = [thinTicket, ticketHasDod, dodQuality, unmeasurableGoal, undefinedValidationPath];
+export const ticketRules: Rule[] = [
+  thinTicket,
+  ticketHasDod,
+  dodQuality,
+  unmeasurableGoal,
+  undefinedValidationPath,
+  missingContext,
+];
