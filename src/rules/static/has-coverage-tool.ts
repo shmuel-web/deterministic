@@ -32,7 +32,7 @@ export const hasCoverageTool: Rule = {
         {
           problem: "no code-coverage tool configured",
           fix: "add a coverage tool (e.g. c8 / nyc / the runner's --coverage) and a coverage script",
-          severity: "minor",
+          severity: "major",
         },
       ],
     };
