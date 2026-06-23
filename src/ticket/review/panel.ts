@@ -52,7 +52,12 @@ function capSeverity(s: Severity): Severity {
 }
 
 const SEV_RANK: Record<Severity, number> = { info: 0, minor: 1, major: 2, critical: 3 };
-const DEDUP_THRESHOLD = 0.5; // Jaccard token overlap above which two issues are "the same gap"
+// Two issues are "the same gap" if their wording is very similar (HIGH), or if
+// they share a code anchor (a cited identifier/file) AND are moderately similar
+// (ANCHORED) — the latter catches same-gap issues two reviewers phrase differently
+// (#88), without merging unrelated issues that just share common words.
+const DEDUP_HIGH = 0.5;
+const DEDUP_ANCHORED = 0.3;
 const STOP = /^\[([^\]]+)\]\s*/; // the "[Reviewer] " attribution prefix
 
 /** Split "[Architect] body" → { reviewer, body }. */
@@ -66,11 +71,26 @@ function tokens(text: string): Set<string> {
   return new Set((text.toLowerCase().match(/\p{L}{4,}/gu) ?? []));
 }
 
+/** Code anchors: cited identifiers/filenames (camelCase, file.ext, kebab/snake) — the "what it's about". */
+function anchors(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of text.matchAll(/[\w.-]{4,}/g)) {
+    const t = m[0];
+    if (/[a-z][A-Z]/.test(t) || /\.[a-z]{1,4}\b/.test(t) || /[_-]/.test(t)) out.add(t.toLowerCase());
+  }
+  return out;
+}
+
 function jaccard(a: Set<string>, b: Set<string>): number {
   if (a.size === 0 || b.size === 0) return 0;
   let shared = 0;
   for (const t of a) if (b.has(t)) shared++;
   return shared / (a.size + b.size - shared);
+}
+
+function sharesAny(a: Set<string>, b: Set<string>): boolean {
+  for (const t of a) if (b.has(t)) return true;
+  return false;
 }
 
 /**
@@ -81,16 +101,21 @@ function jaccard(a: Set<string>, b: Set<string>): number {
  * the panel contributes no penalty when nothing survives.
  */
 export function synthesize(issues: RuleIssue[]): RuleIssue[] {
-  const groups: { sig: Set<string>; issue: RuleIssue; reviewers: string[] }[] = [];
+  const groups: { sig: Set<string>; anch: Set<string>; issue: RuleIssue; reviewers: string[] }[] = [];
   for (const raw of issues) {
     const { reviewer, body } = splitTag(raw.problem);
-    const sig = tokens(`${body} ${raw.fix}`);
-    const dup = groups.find((g) => jaccard(g.sig, sig) >= DEDUP_THRESHOLD);
+    const text = `${body} ${raw.fix}`;
+    const sig = tokens(text);
+    const anch = anchors(text);
+    const dup = groups.find(
+      (g) => jaccard(g.sig, sig) >= DEDUP_HIGH || (sharesAny(g.anch, anch) && jaccard(g.sig, sig) >= DEDUP_ANCHORED),
+    );
     if (dup) {
       if (reviewer && !dup.reviewers.includes(reviewer)) dup.reviewers.push(reviewer);
+      for (const a of anch) dup.anch.add(a);
       if (SEV_RANK[raw.severity] > SEV_RANK[dup.issue.severity]) dup.issue = raw; // keep the worst
     } else {
-      groups.push({ sig, issue: raw, reviewers: reviewer ? [reviewer] : [] });
+      groups.push({ sig, anch, issue: raw, reviewers: reviewer ? [reviewer] : [] });
     }
   }
   return groups.map((g) => {

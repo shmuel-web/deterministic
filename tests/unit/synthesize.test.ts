@@ -38,3 +38,24 @@ test("synthesize: keeps the worst severity when merging", () => {
 test("synthesize: empty in → empty out (panel contributes no penalty)", () => {
   assert.deepEqual(synthesize([]), []);
 });
+
+test("#88: same gap phrased differently by two reviewers collapses via a shared code anchor", () => {
+  // ~0.3 token overlap — below the HIGH bar — but both cite `lastModel`/`loadIndex`,
+  // so the anchored rule merges them (this is the real panel case that under-deduped).
+  const out = synthesize([
+    issue("[Architect] the RepoIndex gains lastModel but loadIndex has no migration for old files", "add a migration"),
+    issue("[Developer] no migration provided in loadIndex for the new lastModel on existing files", "add a migration"),
+  ]);
+  assert.equal(out.length, 1, "the same gap should collapse to one");
+  assert.match(out[0]!.problem, /\[Architect, Developer\]/);
+});
+
+test("#88: sharing an anchor is NOT enough — genuinely distinct fixes stay separate", () => {
+  // Both mention `lastModel`, but one is a migration concern and the other a test
+  // concern — low overlap, so they must remain two distinct issues.
+  const out = synthesize([
+    issue("[Architect] loadIndex has no migration for the lastModel field", "add a migration"),
+    issue("[QA] no test covers the lastModel round-trip in saveIndex", "add a round-trip test"),
+  ]);
+  assert.equal(out.length, 2);
+});
