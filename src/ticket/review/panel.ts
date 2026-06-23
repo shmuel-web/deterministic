@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { ModelClient, Rule, RuleIssue, Severity } from "../../core/rule.js";
 import { RuleIssueSchema } from "../../core/rule.js";
 import { settings } from "../../core/settings.js";
+import { resolveModel, tierConfigured } from "../../core/model.js";
 import { inGitRepo, listSourceFiles } from "../../core/git.js";
 import { resolveBlastRadius } from "../scout.js";
 import { PANEL_REVIEWERS, buildReviewerPrompt, buildGatePrompt, buildDefenderPrompt, type Reviewer } from "./reviewers.js";
@@ -157,9 +158,17 @@ async function gatherBlastRadius(ticket: string): Promise<BlastFile[]> {
  * filter, or the Defender. Exported so the funnel can be unit-tested on a single
  * reviewer (immune to how many reviewers the panel runs).
  */
-export async function runReviewer(reviewer: Reviewer, ticket: string, blastRadius: string, files: BlastFile[], model: ModelClient): Promise<RuleIssue[]> {
-  // 1. applicability gate — skip the (larger) draft entirely if the concern is N/A.
-  if (!(await applies(reviewer, ticket, blastRadius, model))) return [];
+export async function runReviewer(
+  reviewer: Reviewer,
+  ticket: string,
+  blastRadius: string,
+  files: BlastFile[],
+  model: ModelClient,
+  gateModel: ModelClient = model,
+): Promise<RuleIssue[]> {
+  // 1. applicability gate — a boolean, so it runs on the cheap TINY-tier model
+  //    (#86); skip the (larger) draft entirely if the concern is N/A.
+  if (!(await applies(reviewer, ticket, blastRadius, gateModel))) return [];
 
   // 2. draft (one retry on a malformed response).
   let issues: RuleIssue[] | null = null;
@@ -201,7 +210,12 @@ export const reviewPanel: Rule = {
     if (files.length === 0) return { issues: [] }; // FR-008: no grounding → stay silent
 
     const blastRadius = files.map((f) => `=== ${f.path} ===\n${f.content}`).join("\n\n");
-    const perReviewer = await Promise.all(PANEL_REVIEWERS.map((r) => runReviewer(r, ticket, blastRadius, files, model)));
+    // Tier routing (#86): the gate is a boolean → TINY; the drafts/defender are
+    // code-grounded judgment → DEEP. Only resolve a separate client when a tier is
+    // actually configured — otherwise reuse the injected base model unchanged.
+    const gateModel = tierConfigured("tiny") ? ((await resolveModel("tiny")) ?? model) : model;
+    const deepModel = tierConfigured("deep") ? ((await resolveModel("deep")) ?? model) : model;
+    const perReviewer = await Promise.all(PANEL_REVIEWERS.map((r) => runReviewer(r, ticket, blastRadius, files, deepModel, gateModel)));
     return { issues: synthesize(perReviewer.flat()) };
   },
 };
