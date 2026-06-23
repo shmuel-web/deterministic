@@ -10,7 +10,7 @@ shipped**, off by default, zero footprint when off.
 2. `cp .env.example .env` — it's pre-filled with `DETERMINISTIC_DEV_TRACING=1` and the dev keys.
 3. Run a command that uses the LLM (e.g. `deterministic score ticket <path>`).
 
-> ⚠️ Use **`127.0.0.1`**, not `localhost` — an IPv6 loopback forwarder can hijack `localhost:3001` and route it to AWS (a 401). `LANGFUSE_HOST` and the browser both want `127.0.0.1:3001`.
+> ⚠️ Use **`127.0.0.1`**, not `localhost` — an IPv6 loopback forwarder can hijack `localhost:7777` and route it to AWS (a 401). `LANGFUSE_HOST` and the browser both want `127.0.0.1:7777`.
 
 ## What you see
 One **trace per scoring run**, with spans nested to mirror the workflow:

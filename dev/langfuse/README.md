@@ -7,7 +7,7 @@ shipped tool.
 `docker-compose.yml` is Langfuse's official v3 self-host stack (pinned).
 `docker-compose.override.yml` is our local layer: it **headless-provisions a
 project + fixed dev keys** on first boot (no UI clicking), unpublishes the
-backing services' host ports (only the web UI is exposed), and serves on **:3001**
+backing services' host ports (only the web UI is exposed), and serves on **:7777**
 (3000 is often taken by other local stacks).
 
 ## Bring it up
@@ -15,10 +15,10 @@ backing services' host ports (only the web UI is exposed), and serves on **:3001
 cd dev/langfuse
 docker compose -p langfuse up -d        # auto-merges docker-compose.override.yml
 ```
-Wait ~30s, then open **http://127.0.0.1:3001**.
+Wait ~30s, then open **http://127.0.0.1:7777**.
 
 > ⚠️ **Use `127.0.0.1`, not `localhost`.** On some machines an IPv6 loopback
-> forwarder sits on `::1:3001` and hijacks `localhost:3001` (you'll get a
+> forwarder sits on `::1:7777` and hijacks `localhost:7777` (you'll get a
 > CloudFront/`Unauthorized` 401 from AWS). `127.0.0.1` (IPv4) goes straight to the
 > container. This applies to the browser **and** `LANGFUSE_HOST` in `.env`.
 
@@ -30,7 +30,7 @@ The override provisions a user — log in with:
 The project (`Deterministic`) and its API keys are pre-created. They're already in
 `.env.example` — copy it to `.env` at the repo root:
 ```bash
-cp ../../.env.example ../../.env     # already points at 127.0.0.1:3001 with the dev keys
+cp ../../.env.example ../../.env     # already points at 127.0.0.1:7777 with the dev keys
 ```
 
 ## Use it

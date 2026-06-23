@@ -5,11 +5,11 @@
 # Dev-only credentials; localhost only.
 services:
   langfuse-web:
-    # 3000 is taken by other local stacks (Aerospike) → expose Langfuse on 3001.
+    # 3000 is taken by other local stacks (Aerospike) → expose Langfuse on 7777.
     ports: !override
-      - "3001:3000"
+      - "7777:3000"
     environment:
-      NEXTAUTH_URL: http://127.0.0.1:3001
+      NEXTAUTH_URL: http://127.0.0.1:7777
       LANGFUSE_INIT_ORG_ID: det-org
       LANGFUSE_INIT_ORG_NAME: Deterministic
       LANGFUSE_INIT_PROJECT_ID: det-proj
