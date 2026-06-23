@@ -5,6 +5,7 @@ import type { ModelClient, Rule, RuleIssue, Severity } from "../../core/rule.js"
 import { RuleIssueSchema } from "../../core/rule.js";
 import { settings } from "../../core/settings.js";
 import { resolveModel, tierConfigured } from "../../core/model.js";
+import { withSpan } from "../../core/tracing.js";
 import { inGitRepo, listSourceFiles } from "../../core/git.js";
 import { resolveBlastRadius } from "../scout.js";
 import { PANEL_REVIEWERS, buildReviewerPrompt, buildGatePrompt, buildDefenderPrompt, type Reviewer } from "./reviewers.js";
@@ -12,6 +13,11 @@ import { PANEL_REVIEWERS, buildReviewerPrompt, buildGatePrompt, buildDefenderPro
 type BlastFile = { path: string; content: string };
 const AppliesSchema = z.object({ applies: z.boolean() });
 const RefutedSchema = z.object({ refuted: z.boolean() });
+// The gate and Defender answer a single boolean. `json` forces the model to emit
+// that JSON directly (no preamble ramble — gemma4 otherwise writes ~336 tokens for
+// a boolean), and the small cap is a safe backstop since the valid output is tiny.
+const GATE_CALL = { maxTokens: 64, json: true, label: "gate" } as const;
+const DEFENDER_CALL = { maxTokens: 64, json: true, label: "defender" } as const;
 
 /**
  * The agentic ticket-review panel (spec 004) as ONE `Rule` (`target: ticket`).
@@ -96,7 +102,7 @@ export function synthesize(issues: RuleIssue[]): RuleIssue[] {
 
 /** Applicability gate (FR-004): does this reviewer's concern apply at all? */
 async function applies(reviewer: Reviewer, ticket: string, blastRadius: string, model: ModelClient): Promise<boolean> {
-  const match = (await model.complete(buildGatePrompt(reviewer, ticket, blastRadius))).match(/\{[\s\S]*\}/);
+  const match = (await model.complete(buildGatePrompt(reviewer, ticket, blastRadius), GATE_CALL)).match(/\{[\s\S]*\}/);
   if (!match) return true; // unparseable → don't silently skip a real concern
   try {
     const parsed = AppliesSchema.safeParse(JSON.parse(match[0]));
@@ -121,7 +127,7 @@ async function survivesDefender(
   grounding: "file" | "ticket",
 ): Promise<boolean> {
   const strict = settings.review.defender !== "lenient";
-  const match = (await model.complete(buildDefenderPrompt(issue.problem, issue.fix, ticket, blastRadius, strict, grounding))).match(/\{[\s\S]*\}/);
+  const match = (await model.complete(buildDefenderPrompt(issue.problem, issue.fix, ticket, blastRadius, strict, grounding), DEFENDER_CALL)).match(/\{[\s\S]*\}/);
   if (!match) return true; // unparseable → keep (don't drop an already-vetted issue on a parse error)
   try {
     const parsed = RefutedSchema.safeParse(JSON.parse(match[0]));
@@ -173,7 +179,7 @@ export async function runReviewer(
   // 2. draft (one retry on a malformed response).
   let issues: RuleIssue[] | null = null;
   for (let attempt = 0; attempt <= 1 && !issues; attempt++) {
-    issues = parseIssues(await model.complete(buildReviewerPrompt(reviewer, ticket, blastRadius)));
+    issues = parseIssues(await model.complete(buildReviewerPrompt(reviewer, ticket, blastRadius), { label: "draft" }));
   }
   if (!issues) return []; // unparseable after retry → don't fabricate (Principle VI)
 
@@ -215,7 +221,10 @@ export const reviewPanel: Rule = {
     // actually configured — otherwise reuse the injected base model unchanged.
     const gateModel = tierConfigured("tiny") ? ((await resolveModel("tiny")) ?? model) : model;
     const deepModel = tierConfigured("deep") ? ((await resolveModel("deep")) ?? model) : model;
-    const perReviewer = await Promise.all(PANEL_REVIEWERS.map((r) => runReviewer(r, ticket, blastRadius, files, deepModel, gateModel)));
+    // Each reviewer is its own span (#90) so the dev trace nests run → reviewer → call.
+    const perReviewer = await Promise.all(
+      PANEL_REVIEWERS.map((r) => withSpan(r.name, () => runReviewer(r, ticket, blastRadius, files, deepModel, gateModel))),
+    );
     return { issues: synthesize(perReviewer.flat()) };
   },
 };
