@@ -1,0 +1,31 @@
+# LOCAL override (gitignored). Two jobs:
+# 1. Headless-provision a project + fixed dev keys on first boot (no UI clicking).
+# 2. Stop publishing the backing services to host ports — only langfuse-web:3000
+#    is needed; publishing redis/postgres/etc. collides with other local stacks.
+# Dev-only credentials; localhost only.
+services:
+  langfuse-web:
+    # 3000 is taken by other local stacks (Aerospike) → expose Langfuse on 3001.
+    ports: !override
+      - "3001:3000"
+    environment:
+      NEXTAUTH_URL: http://127.0.0.1:3001
+      LANGFUSE_INIT_ORG_ID: det-org
+      LANGFUSE_INIT_ORG_NAME: Deterministic
+      LANGFUSE_INIT_PROJECT_ID: det-proj
+      LANGFUSE_INIT_PROJECT_NAME: Deterministic
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-deterministic-dev
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-deterministic-dev
+      LANGFUSE_INIT_USER_EMAIL: dev@deterministic.local
+      LANGFUSE_INIT_USER_NAME: Dev
+      LANGFUSE_INIT_USER_PASSWORD: deterministic-dev
+  langfuse-worker:
+    ports: !reset []
+  postgres:
+    ports: !reset []
+  redis:
+    ports: !reset []
+  clickhouse:
+    ports: !reset []
+  minio:
+    ports: !reset []
