@@ -35,3 +35,10 @@ On an M4 Pro / 48 GB with Gemma 4 (~3.3 GB resident):
 3. **Parallelism** (#63) helps modestly once `OLLAMA_NUM_PARALLEL` is raised — but it's the smallest lever of the three on a single-GPU laptop.
 
 **Rule of thumb:** lean on incremental + per-call cost; treat parallelism as a minor top-up, not the answer.
+
+## Measured findings (#85)
+On gemma4 8B Q4, single Apple GPU:
+- **Generation dominates.** Prompt processing is ~250–480 tok/s (~3 s); generation is **~6.7 tok/s** — a verbose issue is 700–1100 tokens → **~110–165 s per call**. Wall-clock ≈ tokens-generated ÷ throughput, so it's concurrency-independent on one GPU (8 parallel slots just *divide* the GPU; each call gets ~1/N).
+- **Terser prompts help readability, not speed.** Forcing one-sentence problem/fix cut issue length from ~500+ to ~200 chars (and reduced count) — better annotations, and it lets the synthesizer dedup (#88). But it did **not** materially cut wall-clock; the model still "thinks" at length before emitting.
+- **A hard output cap is a recall HAZARD, not a free speedup.** `num_predict: 600` truncated the still-verbose JSON mid-object → unparseable → **recall collapsed to zero** on gappy tickets (a 2-round calibration went green→all-fail). So the cap (`settings.llm.maxOutputTokens` / `DETERMINISTIC_MAX_OUTPUT_TOKENS`) is **off by default**; only enable it with headroom above the model's real output, or when you accept the trade.
+- **The real per-call lever is a faster/smaller model (#86)**, not output tricks.

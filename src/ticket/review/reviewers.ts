@@ -105,9 +105,10 @@ ${
     ? "- Every issue MUST cite a specific blast-radius file (and the fact in it) and give a concrete fix. If you cannot cite a file, do NOT raise it."
     : "- Every issue MUST point to the specific part of the TICKET it concerns (the bundled items, the missing outcome, the unlinked dependency) and give a concrete fix."
 }
+- Be TERSE: ONE sentence for the problem, ONE sentence for the fix. No examples, no preamble, no restating these instructions.
 - If nothing material applies, return {"issues": []}.
 
-Return ONLY JSON: {"issues":[{"problem":"<specific>","fix":"<concrete>","severity":"info|minor"}]}
+Return ONLY JSON: {"issues":[{"problem":"<one terse sentence>","fix":"<one terse sentence>","severity":"info|minor"}]}
 
 TICKET:
 ---

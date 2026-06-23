@@ -41,9 +41,10 @@ Hard rules:
 - Report ONLY issues about the concern above. If you notice anything else — architecture, library or package choices, performance, general refactors, formatting, test coverage, or any other topic — DO NOT report it. Those are other rules' jobs.
 - If something is intentional (a documented stub, a TODO, a deliberate design note), it is NOT an issue.
 - Every issue must name a concrete, specific fix. Vague advice is not an issue.
+- Be TERSE: ONE sentence for the problem, ONE sentence for the fix. No examples, no preamble, no restating these instructions.
 - If there are no issues for THIS concern, return {"issues": []}. Never invent issues to seem useful. Never praise.
 
-Return ONLY JSON: {"issues":[{"problem":"<specific>","fix":"<concrete>","severity":"info|minor|major|critical"}]}
+Return ONLY JSON: {"issues":[{"problem":"<one terse sentence>","fix":"<one terse sentence>","severity":"info|minor|major|critical"}]}
 
 ${spec.target.toUpperCase()}: ${path}
 ---

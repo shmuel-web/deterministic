@@ -3,6 +3,18 @@
 // @deterministic:end
 import type { ModelClient } from "./rule.js";
 import type { Limit } from "./pool.js";
+import { settings } from "./settings.js";
+
+/**
+ * Output-token ceiling (#85): env override, else the configured default. 0 means
+ * NO cap — the safe default, because a low cap truncates the JSON response and
+ * destroys recall (see settings.llm). Returns null when uncapped so callers omit
+ * the option entirely (preserving the pre-#85 request shape).
+ */
+function maxOutputTokens(): number | null {
+  const n = Number(process.env.DETERMINISTIC_MAX_OUTPUT_TOKENS) || settings.llm.maxOutputTokens;
+  return n > 0 ? n : null;
+}
 
 /**
  * Model resolution (constitution Principle V): local-first, but an LLM is
@@ -19,10 +31,11 @@ const OLLAMA_MODEL = process.env.DETERMINISTIC_OLLAMA_MODEL ?? "gemma4";
 function ollamaClient(host: string, model: string): ModelClient {
   return {
     async complete(prompt: string): Promise<string> {
+      const cap = maxOutputTokens();
       const res = await fetch(`${host}/api/generate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model, prompt, stream: false }),
+        body: JSON.stringify({ model, prompt, stream: false, ...(cap !== null ? { options: { num_predict: cap } } : {}) }),
       });
       if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text()}`);
       const data = (await res.json()) as { response?: string };
@@ -35,10 +48,11 @@ function ollamaClient(host: string, model: string): ModelClient {
 function apiClient(url: string, key: string, model: string): ModelClient {
   return {
     async complete(prompt: string): Promise<string> {
+      const cap = maxOutputTokens();
       const res = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], stream: false }),
+        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], stream: false, ...(cap !== null ? { max_tokens: cap } : {}) }),
       });
       if (!res.ok) throw new Error(`LLM API ${res.status}: ${await res.text()}`);
       const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
