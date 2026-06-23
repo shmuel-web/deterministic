@@ -6,9 +6,11 @@ Langfuse** to see exactly what the agents are doing. This is a dev aid — **nev
 shipped**, off by default, zero footprint when off.
 
 ## Setup
-1. Bring up Langfuse: see [`dev/langfuse/README.md`](../dev/langfuse/README.md).
-2. Put the keys + `DETERMINISTIC_DEV_TRACING=1` in `.env` (see `.env.example`).
-3. Run a command that uses the LLM (e.g. `deterministic score ticket <path>` with the panel enabled).
+1. Bring up Langfuse: `cd dev/langfuse && docker compose -p langfuse up -d` (see [`dev/langfuse/README.md`](../dev/langfuse/README.md)).
+2. `cp .env.example .env` — it's pre-filled with `DETERMINISTIC_DEV_TRACING=1` and the dev keys.
+3. Run a command that uses the LLM (e.g. `deterministic score ticket <path>`).
+
+> ⚠️ Use **`127.0.0.1`**, not `localhost` — an IPv6 loopback forwarder can hijack `localhost:7777` and route it to AWS (a 401). `LANGFUSE_HOST` and the browser both want `127.0.0.1:7777`.
 
 ## What you see
 One **trace per scoring run**, with spans nested to mirror the workflow:

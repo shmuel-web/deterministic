@@ -28,6 +28,13 @@ function unknown(what: string): void {
 }
 
 async function main(): Promise<void> {
+  // Load a local .env if present (dev convenience; e.g. the #90 tracing vars).
+  try {
+    process.loadEnvFile();
+  } catch {
+    /* no .env — fine */
+  }
+
   // Dev tracing (#90): fail-closed — if DETERMINISTIC_DEV_TRACING is on and the
   // trace backend is unreachable, this throws before any LLM call runs.
   await initTracing();
