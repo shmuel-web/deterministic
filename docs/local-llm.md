@@ -42,3 +42,29 @@ On gemma4 8B Q4, single Apple GPU:
 - **Terser prompts help readability, not speed.** Forcing one-sentence problem/fix cut issue length from ~500+ to ~200 chars (and reduced count) — better annotations, and it lets the synthesizer dedup (#88). But it did **not** materially cut wall-clock; the model still "thinks" at length before emitting.
 - **A hard output cap is a recall HAZARD, not a free speedup.** `num_predict: 600` truncated the still-verbose JSON mid-object → unparseable → **recall collapsed to zero** on gappy tickets (a 2-round calibration went green→all-fail). So the cap (`settings.llm.maxOutputTokens` / `DETERMINISTIC_MAX_OUTPUT_TOKENS`) is **off by default**; only enable it with headroom above the model's real output, or when you accept the trade.
 - **The real per-call lever is a faster/smaller model (#86)**, not output tricks.
+
+## Model tiering (#86)
+Route each LLM call to an appropriately-sized model. Per-tier env vars, each
+defaulting to the base model (`DETERMINISTIC_OLLAMA_MODEL`, gemma4) — so tiering
+is a **no-op until you opt in**:
+- `DETERMINISTIC_OLLAMA_MODEL_TINY` — booleans (the panel's applicability gate)
+- `DETERMINISTIC_OLLAMA_MODEL_DEEP` — code-grounded judgment (the panel reviewers)
+- `DETERMINISTIC_OLLAMA_MODEL_SCOPED` — reserved; scoped single-concern rules aren't routed yet.
+
+**Benchmark — gemma4 8B vs gemma3:1b (warm):**
+
+| call | gemma4 8B | gemma3:1b |
+|---|---|---|
+| gate (boolean) | 7.6 s / **336 tok** | ~0.5 s / **16 tok** |
+| draft | 7.7 s / 345 tok | 0.5 s / 24 tok |
+
+gemma3:1b is **~15× faster per warm call** and far more concise. (Each model pays a ~9 s **cold load** on first use.) Note gemma4 emits **336 tokens for a boolean gate** — it rambles; the gate is a prime candidate for a tiny model (or a capped boolean call — see #89).
+
+⚠️ **Mixing models needs `OLLAMA_MAX_LOADED_MODELS ≥ 2`.** With the default (often 1), each tier switch *reloads* the model (~9 s) and thrashes — far slower than no tiering. Set it ≥ 2 and make sure both models fit in VRAM.
+
+**Recommended opt-in (validate with `npm run calibrate` first):**
+```bash
+export OLLAMA_MAX_LOADED_MODELS=2
+export DETERMINISTIC_OLLAMA_MODEL_TINY=gemma3:1b   # cheap, accurate boolean gate
+# keep DEEP on gemma4 for judgment quality; try gemma3:4b for DEEP and re-run calibrate before trusting it
+```

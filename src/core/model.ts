@@ -27,6 +27,29 @@ function maxOutputTokens(): number | null {
 const OLLAMA_HOST = process.env.OLLAMA_HOST ?? "http://localhost:11434";
 const OLLAMA_MODEL = process.env.DETERMINISTIC_OLLAMA_MODEL ?? "gemma4";
 
+/**
+ * Model tiers (#86) — route a task to an appropriately-sized model:
+ *   tiny   — boolean / extraction (the applicability gate, coverage-% read)
+ *   scoped — single-concern judgment (intent-legibility, ticket rules)
+ *   deep   — code-grounded multi-file judgment (the panel reviewers)
+ * Each defaults to the base model, so tiering is a NO-OP until you point a tier at
+ * a smaller/faster model via env (e.g. DETERMINISTIC_OLLAMA_MODEL_TINY=gemma3:1b).
+ */
+export type ModelTier = "tiny" | "scoped" | "deep";
+const TIER_ENV: Record<ModelTier, string> = {
+  tiny: "DETERMINISTIC_OLLAMA_MODEL_TINY",
+  scoped: "DETERMINISTIC_OLLAMA_MODEL_SCOPED",
+  deep: "DETERMINISTIC_OLLAMA_MODEL_DEEP",
+};
+function ollamaModelForTier(tier?: ModelTier): string {
+  return (tier && process.env[TIER_ENV[tier]]) || OLLAMA_MODEL;
+}
+
+/** True only if a distinct model is configured for this tier (else it's the base model). */
+export function tierConfigured(tier: ModelTier): boolean {
+  return Boolean(process.env[TIER_ENV[tier]]);
+}
+
 /** Ollama-backed client (local, no keys). */
 function ollamaClient(host: string, model: string): ModelClient {
   return {
@@ -75,10 +98,14 @@ export function withConcurrencyLimit(model: ModelClient, limit: Limit): ModelCli
   return { complete: (prompt) => limit(() => model.complete(prompt)) };
 }
 
-/** Resolve a model client, or null if none is available. */
-export async function resolveModel(): Promise<ModelClient | null> {
+/**
+ * Resolve a model client for a tier (#86), or null if none is available.
+ * Ollama path picks the tier's model (env-overridable, defaults to the base
+ * model). The API fallback is single-model for now — API tiering is a follow-up.
+ */
+export async function resolveModel(tier?: ModelTier): Promise<ModelClient | null> {
   if (await ollamaReachable(OLLAMA_HOST)) {
-    return ollamaClient(OLLAMA_HOST, OLLAMA_MODEL);
+    return ollamaClient(OLLAMA_HOST, ollamaModelForTier(tier));
   }
   const url = process.env.DETERMINISTIC_LLM_API_URL;
   const key = process.env.DETERMINISTIC_LLM_API_KEY;
