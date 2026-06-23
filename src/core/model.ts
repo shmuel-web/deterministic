@@ -1,9 +1,10 @@
 // @deterministic score: 97/100
 //   [minor] llm/intent-legibility  The file's primary exported function, `resolveModel`, lacks a comprehensive doc comment explaining its purpose and the fallback logic involved in model resolution (local -> user API -> null). → Add a detailed JSDoc block immediately above `export async function resolveModel(): Promise<ModelClient | null>` describing that this function attempts to resolve an available LLM client, prioritizing local Ollama instances before falling back to environment variable-based external APIs.
 // @deterministic:end
-import type { ModelClient } from "./rule.js";
+import type { ModelClient, CompleteOptions } from "./rule.js";
 import type { Limit } from "./pool.js";
 import { settings } from "./settings.js";
+import { traced } from "./tracing.js";
 
 /**
  * Output-token ceiling (#85): env override, else the configured default. 0 means
@@ -53,12 +54,18 @@ export function tierConfigured(tier: ModelTier): boolean {
 /** Ollama-backed client (local, no keys). */
 function ollamaClient(host: string, model: string): ModelClient {
   return {
-    async complete(prompt: string): Promise<string> {
-      const cap = maxOutputTokens();
+    async complete(prompt: string, opts?: CompleteOptions): Promise<string> {
+      const cap = opts?.maxTokens ?? maxOutputTokens();
       const res = await fetch(`${host}/api/generate`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model, prompt, stream: false, ...(cap !== null ? { options: { num_predict: cap } } : {}) }),
+        body: JSON.stringify({
+          model,
+          prompt,
+          stream: false,
+          ...(opts?.json ? { format: "json" } : {}),
+          ...(cap !== null && cap > 0 ? { options: { num_predict: cap } } : {}),
+        }),
       });
       if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text()}`);
       const data = (await res.json()) as { response?: string };
@@ -70,12 +77,18 @@ function ollamaClient(host: string, model: string): ModelClient {
 /** OpenAI-compatible chat completions client for a user-provided API. */
 function apiClient(url: string, key: string, model: string): ModelClient {
   return {
-    async complete(prompt: string): Promise<string> {
-      const cap = maxOutputTokens();
+    async complete(prompt: string, opts?: CompleteOptions): Promise<string> {
+      const cap = opts?.maxTokens ?? maxOutputTokens();
       const res = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], stream: false, ...(cap !== null ? { max_tokens: cap } : {}) }),
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          stream: false,
+          ...(cap !== null && cap > 0 ? { max_tokens: cap } : {}),
+          ...(opts?.json ? { response_format: { type: "json_object" } } : {}),
+        }),
       });
       if (!res.ok) throw new Error(`LLM API ${res.status}: ${await res.text()}`);
       const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
@@ -95,7 +108,7 @@ async function ollamaReachable(host: string): Promise<boolean> {
 
 /** Wrap a model so every `complete()` call passes through the concurrency limiter. */
 export function withConcurrencyLimit(model: ModelClient, limit: Limit): ModelClient {
-  return { complete: (prompt) => limit(() => model.complete(prompt)) };
+  return { complete: (prompt, opts) => limit(() => model.complete(prompt, opts)) };
 }
 
 /**
@@ -104,13 +117,15 @@ export function withConcurrencyLimit(model: ModelClient, limit: Limit): ModelCli
  * model). The API fallback is single-model for now — API tiering is a follow-up.
  */
 export async function resolveModel(tier?: ModelTier): Promise<ModelClient | null> {
+  let client: ModelClient | null = null;
   if (await ollamaReachable(OLLAMA_HOST)) {
-    return ollamaClient(OLLAMA_HOST, ollamaModelForTier(tier));
+    client = ollamaClient(OLLAMA_HOST, ollamaModelForTier(tier));
+  } else {
+    const url = process.env.DETERMINISTIC_LLM_API_URL;
+    const key = process.env.DETERMINISTIC_LLM_API_KEY;
+    if (url && key) client = apiClient(url, key, process.env.DETERMINISTIC_LLM_API_MODEL ?? "gpt-4o-mini");
   }
-  const url = process.env.DETERMINISTIC_LLM_API_URL;
-  const key = process.env.DETERMINISTIC_LLM_API_KEY;
-  if (url && key) {
-    return apiClient(url, key, process.env.DETERMINISTIC_LLM_API_MODEL ?? "gpt-4o-mini");
-  }
-  return null;
+  // Dev tracing (#90): wrap the client so every call is recorded. `traced` is a
+  // no-op (identity) unless tracing is active, so this is free when off.
+  return client ? traced(client) : null;
 }

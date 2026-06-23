@@ -7,6 +7,7 @@ import { scoreRepo } from "./commands/score-repo.js";
 import { scoreTicket } from "./ticket/score-ticket.js";
 import { validateTicket } from "./commands/validate-ticket.js";
 import { scoreFile } from "./commands/score-file.js"; // internal/dev only
+import { initTracing } from "./core/tracing.js";
 
 const HELP = `deterministic — a linter for AI coding agents
 
@@ -27,6 +28,10 @@ function unknown(what: string): void {
 }
 
 async function main(): Promise<void> {
+  // Dev tracing (#90): fail-closed — if DETERMINISTIC_DEV_TRACING is on and the
+  // trace backend is unreachable, this throws before any LLM call runs.
+  await initTracing();
+
   const [command, sub, ...rest] = process.argv.slice(2);
   switch (command) {
     case "init":

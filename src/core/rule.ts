@@ -35,9 +35,19 @@ export const RuleResultSchema = z.object({
 });
 export type RuleResult = z.infer<typeof RuleResultSchema>;
 
+/** Per-call generation options (optional; backends apply what they support). */
+export interface CompleteOptions {
+  /** Hard output-token ceiling for THIS call — safe only for tiny/bounded outputs (e.g. a boolean). */
+  maxTokens?: number;
+  /** Constrain output to valid JSON (Ollama `format:json` / OpenAI `json_object`) — kills preamble rambling. */
+  json?: boolean;
+  /** A label for this call in dev traces (#90), e.g. "gate" / "draft" / "defender". Ignored when tracing is off. */
+  label?: string;
+}
+
 /** Minimal LLM client. Implemented by the Ollama/API backends (see model.ts). */
 export interface ModelClient {
-  complete(prompt: string): Promise<string>;
+  complete(prompt: string, opts?: CompleteOptions): Promise<string>;
 }
 
 /** What a rule receives. `model` is present only for LLM rules (Orchestrator-injected). */

@@ -3,6 +3,7 @@ import { PENALTY, type ModelClient } from "../core/rule.js";
 import { runRules } from "../core/orchestrator.js";
 import { writeAnnotation, stripAnnotation } from "../core/annotation.js";
 import { resolveModel } from "../core/model.js";
+import { withTrace } from "../core/tracing.js";
 import { loadIndex } from "../core/index-store.js";
 import { inGitRepo, listSourceFiles } from "../core/git.js";
 import { ticketRules } from "./rules.js";
@@ -32,22 +33,25 @@ export async function scoreTicket(ticketPath?: string, modelOverride?: ModelClie
   const raw = await fs.readFile(ticketPath, "utf8");
   const content = stripAnnotation(raw); // never score our own annotation
 
-  // Spec-quality dimension → penalties.
-  const model = modelOverride ?? (await resolveModel());
-  const issues = await runRules(
-    ticketRules,
-    { target: "ticket", path: ticketPath, content },
-    { model: model ?? undefined },
-  );
-  const penalty = issues.reduce((sum, i) => sum + PENALTY[i.severity], 0);
+  // One dev trace per scoring run (#90) — every LLM call below nests under it.
+  await withTrace(`score ticket: ${ticketPath}`, async () => {
+    // Spec-quality dimension → penalties.
+    const model = modelOverride ?? (await resolveModel());
+    const issues = await runRules(
+      ticketRules,
+      { target: "ticket", path: ticketPath, content },
+      { model: model ?? undefined },
+    );
+    const penalty = issues.reduce((sum, i) => sum + PENALTY[i.severity], 0);
 
-  // Execution-risk dimension → base (average of the blast-radius file scores).
-  const blast = await resolveBlast(content);
+    // Execution-risk dimension → base (average of the blast-radius file scores).
+    const blast = await resolveBlast(content);
 
-  const score = Math.max(0, Math.min(100, blast.base - penalty));
-  await writeAnnotation({ target: "ticket", path: ticketPath, score, issues });
+    const score = Math.max(0, Math.min(100, blast.base - penalty));
+    await writeAnnotation({ target: "ticket", path: ticketPath, score, issues });
 
-  print(ticketPath, score, blast, penalty, issues);
+    print(ticketPath, score, blast, penalty, issues);
+  });
 }
 
 /** Resolve the blast radius from the index + repo file list; degrade cleanly if unavailable. */
