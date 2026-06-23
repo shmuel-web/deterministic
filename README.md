@@ -35,6 +35,17 @@ The mark appears only when it earns the room — minimal, removable, opt-out.
 
 LLM rules run on a **local model by default** (Ollama + Gemma 4) — no API keys, no cloud, no data leaving your machine. A user-provided API is the fallback. Static rules need no model at all. See [`docs/local-llm.md`](docs/local-llm.md).
 
+## Observability (dev) — _planned ([#90](https://gitlab.tikalk.dev/tikalk/fuse/2026/team-7-deterministic/-/issues/90))_
+
+Deterministic runs real multi-step LLM workflows — chiefly the **reviewer panel**: four expert agents (Architect · Developer · QA · PM), each run through a funnel (applicability gate → draft → evidence filter → adversarial Defender), then synthesized. To *see what the agents are actually doing on your machine*, development runs trace every LLM call to a **self-hosted [Langfuse](https://langfuse.com)** — configured via `.env`, and **never shipped in the tool**.
+
+The reasoning behind the shape:
+
+- **Dev-only.** Deterministic is a local CLI linter; end users don't run an observability server. Tracing is a development aid — opt-in via `.env`, **zero footprint when off**.
+- **Self-hosted + persistent.** Local-first (no prompts leave the box), on a DB with named volumes so **traces survive a Langfuse restart**.
+- **Fail-closed in dev.** If tracing is enabled and Langfuse is down, the process **fails** — in development we observe every LLM call or we don't run. No silent, un-traced calls.
+- **A tool only where one earns its place.** We avoid frameworks we don't need — we *declined* Mastra because the funnel is hand-rolled and works. But observability is a real, unmet need (we'd otherwise hand-roll it badly with throwaway scripts), and Langfuse — open-source, self-hostable, OpenTelemetry-compatible — fits it cleanly. The discipline is the same in both calls: **add the tool only when the need is real.**
+
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md) — the one-page architecture
