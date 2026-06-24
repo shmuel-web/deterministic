@@ -9,10 +9,10 @@ export const importCount: Rule = {
   type: "static",
   description: "Flags files with excessive import fan-out — a signal of tight coupling.",
   run({ content }) {
-    const count = (content ?? "").match(/^import\s/gm)?.length ?? 0;
+    const count = (content ?? "").match(/^\s*import\s/gm)?.length ?? 0;
     if (count <= SOFT_CAP) return { issues: [] };
     const over = count - SOFT_CAP;
-    const severity: RuleIssue["severity"] = over > 20 ? "major" : over > 10 ? "minor" : "info";
+    const severity: RuleIssue["severity"] = over >= 20 ? "major" : over >= 10 ? "minor" : "info";
     return {
       issues: [
         {

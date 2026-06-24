@@ -39,3 +39,19 @@ test("import-count: non-TS file with 20 imports still counts (language-agnostic)
   const { issues } = await importCount.run({ target: "file", path: "index.js", content: makeImports(20) });
   assert.equal(issues.length, 1);
 });
+
+test("import-count: exactly 25 imports (over=10) → minor (boundary inclusive)", async () => {
+  const { issues } = await run(makeImports(25));
+  assert.equal(issues[0]!.severity, "minor");
+});
+
+test("import-count: exactly 35 imports (over=20) → major (boundary inclusive)", async () => {
+  const { issues } = await run(makeImports(35));
+  assert.equal(issues[0]!.severity, "major");
+});
+
+test("import-count: indented import inside declare module counted", async () => {
+  const content = `declare module "x" {\n${makeImports(20).split("\n").map(l => "  " + l).join("\n")}\n}`;
+  const { issues } = await importCount.run({ target: "file", path: "types.d.ts", content });
+  assert.equal(issues.length, 1);
+});
