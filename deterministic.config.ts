@@ -25,6 +25,7 @@ import { tsIgnoreCount } from "./src/rules/static/ts-ignore-count.js";
 import { importCount } from "./src/rules/static/import-count.js";
 import { fanIn } from "./src/rules/static/fan-in.js";
 import { namingConvention } from "./src/rules/static/naming-convention.js";
+import { functionCount } from "./src/rules/static/function-count.js";
 import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
@@ -39,6 +40,7 @@ export const rules: Rule[] = [
   fileLength,
   missingTypes,
   functionLength,
+  functionCount,
   tsIgnoreCount,
   importCount,
   fanIn,
