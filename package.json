@@ -25,6 +25,9 @@
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.74",
+    "@mastra/core": "^1.46.0",
+    "ai": "^6.0.209",
     "zod": "^3.23.8"
   },
   "devDependencies": {

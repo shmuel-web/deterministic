@@ -8,6 +8,7 @@ import { gatherRepoContext, renderContext, summarizeStructure } from "../../src/
 import { reconcile, type ReviewerDraft } from "../../src/rules/repo-review/arbitrator.js";
 import { architect, testingExpert } from "../../src/rules/repo-review/reviewers.js";
 import { reviewRepo, parseDraft } from "../../src/rules/repo-review/panel.js";
+import { repoReviewPanel } from "../../src/rules/repo-review/rule.js";
 
 /** #72 — the repo-review panel scaffold, verified end-to-end with a STUB model. */
 
@@ -80,6 +81,14 @@ test("parseDraft: tolerant of chatter, null on unparseable", () => {
 
 test("reviewRepo: no model → clean pass (no throw, no issues)", async () => {
   assert.deepEqual(await reviewRepo(".", null), []);
+});
+
+test("repoReviewPanel rule: gated OFF by default (expensive judgment tier)", async () => {
+  // settings.repoReview.enabled is false by default → silent, no model resolution.
+  const result = await repoReviewPanel.run({ target: "repo", path: "." });
+  assert.deepEqual(result.issues, []);
+  assert.equal(repoReviewPanel.id, "static/repo-review-panel");
+  assert.equal(repoReviewPanel.target, "repo");
 });
 
 test("reviewRepo: drives the panel with a stub model and reconciles", async () => {

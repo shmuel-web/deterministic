@@ -21,6 +21,7 @@ import { agentRunsDeterministic } from "./src/rules/static/agent-runs-determinis
 import { enforcesDeterministic } from "./src/rules/static/enforces-deterministic.js";
 import { coverageThreshold } from "./src/rules/static/coverage-threshold.js";
 import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
+import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
@@ -54,6 +55,7 @@ export const rules: Rule[] = [
   enforcesDeterministic,
   coverageThreshold,
   coverageAgentic,
+  repoReviewPanel,
 ];
 
 // Settings live in their own module (rules import them without importing this
