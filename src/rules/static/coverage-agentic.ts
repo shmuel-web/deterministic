@@ -2,9 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { Rule, RuleIssue } from "../../core/rule.js";
-import { safeExec } from "../../core/exec.js";
 import { resolveModel } from "../../core/model.js";
-import { settings } from "../../core/settings.js";
 import { band, readCoveragePct, isReportStale } from "../../core/coverage.js";
 
 const PctSchema = z.object({ pct: z.number().min(0).max(100) });
@@ -29,18 +27,21 @@ function issueFor(pct: number, via: string): RuleIssue[] {
 /**
  * Agentic execution rule (spec 002). Owns coverage when execution is ENABLED:
  * - a FRESH report on disk → just band it (no re-run);
- * - STALE or absent report → an agent picks the coverage command, `safeExec`
- *   runs it, the agent reads the line %, we band it.
- * Silent when execution is off (the static `coverage-threshold` owns that mode).
+ * - STALE or absent report → an agent picks the coverage command, `ctx.exec`
+ *   runs it (safely), the agent reads the line %, we band it.
+ * Silent when execution is off (the static `coverage-threshold` owns that mode):
+ * `ctx.exec` is the opt-in signal — the Orchestrator only injects it when
+ * execution is enabled, so its absence IS the off-mode guard (#70).
  * This is how staleness is handled in execution mode — we always end up fresh.
  */
 export const coverageAgentic: Rule = {
   id: "static/coverage-agentic",
   target: "repo",
   type: "static",
+  needsExec: true,
   description: "Agent-driven coverage: re-runs the coverage tool when the report is stale or missing.",
-  async run({ path: root }) {
-    if (!settings.execution.enabled) return { issues: [] }; // safe by default; static rule owns off-mode
+  async run({ path: root, exec }) {
+    if (!exec) return { issues: [] }; // execution opted out → static `coverage-threshold` owns this mode
 
     const pct = await readCoveragePct(root);
     if (pct !== null && !(await isReportStale(root))) return { issues: issueFor(pct, "fresh report") };
@@ -56,7 +57,7 @@ export const coverageAgentic: Rule = {
     );
     const command = cmdRaw.trim().split("\n")[0]!.replace(/^[`$]+|[`]+$/g, "").trim();
 
-    const res = await safeExec(command, { cwd: root, timeoutMs: settings.execution.timeoutMs });
+    const res = await exec(command);
     if (!res.ok) return { issues: [] }; // rejected / failed / timed out — don't fabricate
 
     const measured = parsePct(

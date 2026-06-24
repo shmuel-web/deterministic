@@ -1,13 +1,20 @@
 // @deterministic score: 97/100
 //   [minor] llm/intent-legibility  There is no explicit top-level comment describing the module's overall purpose (orchestration and execution flow). → Add a module-level JSDoc block at the very top of the file, such as: /** * Module for orchestrating the running of multiple structured rules against a given context. It manages rule application, error isolation, and aggregation of resulting issues. */
 // @deterministic:end
-import type { ModelClient, Rule, RuleContext } from "./rule.js";
+import type { ModelClient, Rule, RuleContext, RuleExec } from "./rule.js";
 import { RuleResultSchema } from "./rule.js";
 import type { IdentifiedIssue } from "./score.js";
 
 export interface RunOptions {
   /** Resolved model for LLM rules. Required if any applicable rule is `llm` (Principle V). */
   model?: ModelClient;
+  /**
+   * Execution capability for rules that declare `needsExec` (#70). Present only
+   * when execution is opted in; absent → those rules see no `ctx.exec` and degrade
+   * to a clean pass. Unlike `model`, a missing capability is NOT an error here:
+   * execution is off-by-default, so silence is the safe state, not a degraded one.
+   */
+  exec?: RuleExec;
 }
 
 /**
@@ -39,7 +46,11 @@ export async function runRules(
     applicable.map(async (rule): Promise<IdentifiedIssue[]> => {
       let raw;
       try {
-        raw = await rule.run({ ...ctx, model: rule.type === "llm" ? options.model : undefined });
+        raw = await rule.run({
+          ...ctx,
+          model: rule.type === "llm" ? options.model : undefined,
+          exec: rule.needsExec ? options.exec : undefined,
+        });
       } catch (err) {
         console.warn(`  ! rule ${rule.id} threw and was skipped: ${(err as Error).message}`);
         return [];
