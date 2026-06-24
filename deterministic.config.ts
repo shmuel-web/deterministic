@@ -21,6 +21,8 @@ import { agentRunsDeterministic } from "./src/rules/static/agent-runs-determinis
 import { enforcesDeterministic } from "./src/rules/static/enforces-deterministic.js";
 import { coverageThreshold } from "./src/rules/static/coverage-threshold.js";
 import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
+import { tsIgnoreCount } from "./src/rules/static/ts-ignore-count.js";
+import { importCount } from "./src/rules/static/import-count.js";
 import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
@@ -35,6 +37,8 @@ export const rules: Rule[] = [
   fileLength,
   missingTypes,
   functionLength,
+  tsIgnoreCount,
+  importCount,
   intentLegibility,
   // repo target (presence checks — static, no model)
   repoHasTests,
