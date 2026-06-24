@@ -1,9 +1,13 @@
+// @deterministic score: 99/100
+//   [info] static/cognitive-complexity  worst function `scoreRepo` has cognitive complexity 18 (file avg: 18) — 3 over the 15 cap → reduce nesting depth, extract inner branches into helper functions, or flatten conditional chains
+// @deterministic:end
 import { scoreManyFiles, runRepoRules } from "./score-file.js";
 import { summarize } from "./init.js";
 import { selectDetector } from "../core/change-detect.js";
 import { loadIndex, saveIndex, record, remove, repoScore } from "../core/index-store.js";
 import { writeSurfaces } from "../core/report.js";
 import { settings } from "../../deterministic.config.js";
+import { inGitRepo, commitAnnotations } from "../core/git.js";
 
 /**
  * `deterministic score repo` — the cheap, incremental repo score. Re-scores only
@@ -11,7 +15,7 @@ import { settings } from "../../deterministic.config.js";
  * the problems-only index, and recomposes the repo score without re-reading the
  * tree (Principle IV). Works with or without git (#65). Run `init` first.
  */
-export async function scoreRepo(): Promise<void> {
+export async function scoreRepo(opts: { commit?: boolean } = {}): Promise<void> {
   const detector = selectDetector();
 
   const index = await loadIndex();
@@ -38,4 +42,12 @@ export async function scoreRepo(): Promise<void> {
   const total = (await detector.listSourceFiles()).length;
   if (settings.writeSurfaces) await writeSurfaces(index, repoScore(index), total);
   summarize(changed.length, index, total);
+
+  if (opts.commit) {
+    if (!inGitRepo()) {
+      console.warn("  ⚠ --commit requires a git repository; flag ignored.");
+    } else {
+      commitAnnotations(changed);
+    }
+  }
 }

@@ -1,7 +1,7 @@
-// @deterministic score: 91/100
-//   [minor] llm/intent-legibility  The file lacks a module-level doc comment indicating its overall purpose (i.e., managing Git interactions for source code scope calculation), making it unclear at a glance what the entire file provides. → Add a high-level JSDoc block immediately before any exports, summarizing that this module handles interaction with Git to determine scorable files and changes within a repository context.
-//   [minor] llm/intent-legibility  The exported function `inGitRepo()` is missing documentation, hindering understanding of its usage and return value. → Add a JSDoc comment to `inGitRepo` detailing that it checks if the current working directory is inside a Git repository using 'git rev-parse --is-inside-work-tree'.
-//   [minor] llm/intent-legibility  The exported function `headSha()` is missing documentation, making its purpose unclear to a reader only judging by the name and code. → Add a JSDoc comment to `headSha` explaining that it retrieves the SHA hash of the current commit HEAD using 'git rev-parse HEAD'.
+// @deterministic score: 93/100
+//   [minor] static/cognitive-complexity  worst function `changedSince` has cognitive complexity 24 (file avg: 6) — 9 over the 15 cap → reduce nesting depth, extract inner branches into helper functions, or flatten conditional chains
+//   [minor] llm/intent-legibility  The file's main exported symbol lacks a clear overall purpose doc comment. → Add a doc comment at the top of the file indicating its purpose related to Git-backed repo and change detection.
+//   [info] static/fan-in  6 files import this module — high fan-in means changes here have a wide blast radius → extract a narrower interface, split into sub-modules, or introduce an indirection layer
 // @deterministic:end
 import { execFileSync } from "node:child_process";
 import { isScorable } from "./scope.js";
@@ -33,6 +33,23 @@ export function headSha(): string {
 /** All tracked, scorable source files in the repo. */
 export function listSourceFiles(): string[] {
   return git(["ls-files"]).split("\n").filter(Boolean).filter(isScorable);
+}
+
+/**
+ * Stage the given files and create a commit with the standard annotation message.
+ * No-op if nothing is staged after `git add` (files were already up-to-date).
+ * Throws if git commit fails (bad identity, hook rejection, etc.).
+ */
+export function commitAnnotations(files: string[]): void {
+  if (files.length === 0) return;
+  git(["add", "--", ...files]);
+  try {
+    git(["diff", "--cached", "--quiet"]);
+    // exit 0 → nothing staged, nothing to commit
+  } catch {
+    // exit non-zero → staged changes exist, proceed
+    git(["commit", "-m", "chore: apply deterministic annotations"]);
+  }
 }
 
 /**
