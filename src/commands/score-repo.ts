@@ -1,3 +1,6 @@
+// @deterministic score: 99/100
+//   [info] static/cognitive-complexity  worst function `scoreRepo` has cognitive complexity 18 (file avg: 18) — 3 over the 15 cap → reduce nesting depth, extract inner branches into helper functions, or flatten conditional chains
+// @deterministic:end
 import { scoreManyFiles, runRepoRules } from "./score-file.js";
 import { summarize } from "./init.js";
 import { selectDetector } from "../core/change-detect.js";
