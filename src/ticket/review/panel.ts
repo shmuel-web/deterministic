@@ -137,10 +137,23 @@ async function applies(reviewer: Reviewer, ticket: string, blastRadius: string, 
   }
 }
 
-/** Evidence gate (FR-005): an issue must cite one of the blast-radius files. */
+/**
+ * Evidence gate (FR-005): an issue must be grounded in a blast-radius file —
+ * by naming the file (path/basename) OR by citing a code identifier that appears
+ * in that file (e.g. `loadIndex`). The identifier match matters: reviewers often
+ * cite the symbol, not the filename, in the structured problem/fix — matching only
+ * the filename silently dropped real findings (and starved the Defender).
+ */
 function citesBlastRadius(issue: RuleIssue, files: BlastFile[]): boolean {
-  const hay = `${issue.problem} ${issue.fix}`.toLowerCase();
-  return files.some((f) => hay.includes(f.path.toLowerCase()) || hay.includes(path.posix.basename(f.path).toLowerCase()));
+  const text = `${issue.problem} ${issue.fix}`;
+  const hay = text.toLowerCase();
+  const issueAnchors = anchors(text);
+  return files.some(
+    (f) =>
+      hay.includes(f.path.toLowerCase()) ||
+      hay.includes(path.posix.basename(f.path).toLowerCase()) ||
+      sharesAny(issueAnchors, anchors(f.content)),
+  );
 }
 
 /** Adversarial Defender (FR-006): keep an issue only if it survives a refutation attempt. */
