@@ -27,11 +27,15 @@ export interface RuleResult {
 
 export interface ModelClient { complete(prompt: string): Promise<string>; }
 
+// EXECUTION capability (#70): run one allowlisted command, never throws.
+export type RuleExec = (command: string) => Promise<ExecResult>;
+
 export interface RuleContext {
   target: RuleTarget;
   path: string;
   content?: string;
   model?: ModelClient;   // present only for LLM rules (Orchestrator-injected)
+  exec?: RuleExec;       // present only for `needsExec` rules when execution is opted in (Orchestrator-injected)
 }
 
 export interface Rule {
@@ -39,9 +43,18 @@ export interface Rule {
   target: RuleTarget;
   type: RuleType;
   description?: string;
+  needsExec?: boolean;   // declares the rule wants ctx.exec (spec 002 execution tier)
   run(context: RuleContext): RuleResult | Promise<RuleResult>;
 }
 ```
+
+> **Additive, not a shape change.** `exec?`/`needsExec?` are optional and
+> backward-compatible — existing rules ignore them, exactly like `model?`. The
+> frozen *shape* (a rule returns issues, not a score) is untouched. `exec` is a
+> capability injected ONLY for rules that declare `needsExec`, and ONLY when
+> execution is opted in (off by default); its absence is the off-mode guard, and
+> a rejected/failed command returns a neutral `{ ok: false }` — never a throw,
+> never a fabricated issue (Principles II, VI).
 
 ## Zod schema (runtime enforcement)
 

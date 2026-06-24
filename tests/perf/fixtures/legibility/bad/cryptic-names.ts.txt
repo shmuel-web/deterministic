@@ -1,0 +1,15 @@
+export function p(a, b, c) {
+  const r = [];
+  for (const x of a) {
+    if (x.v > b && x.t !== c) r.push(x);
+  }
+  return r;
+}
+
+export const d = (m) => Object.keys(m).reduce((s, k) => s + m[k], 0);
+
+export class M {
+  q = [];
+  add(z) { this.q.push(z); }
+  go() { return this.q.shift(); }
+}

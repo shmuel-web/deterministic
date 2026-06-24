@@ -62,3 +62,17 @@ export function safeExec(
     );
   });
 }
+
+/**
+ * Build the `RuleContext.exec` capability the Orchestrator hands to execution
+ * rules (#70): a `safeExec` pre-bound to a repo root (+ timeout / allowlist), so
+ * a rule just supplies the command. The opt-in gate lives at the call site — the
+ * Orchestrator only passes this in when execution is enabled.
+ */
+export function createExec(opts: {
+  cwd: string;
+  timeoutMs?: number;
+  allowlist?: readonly string[];
+}): (command: string) => Promise<ExecResult> {
+  return (command: string) => safeExec(command, opts);
+}

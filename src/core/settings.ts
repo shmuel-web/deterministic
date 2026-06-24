@@ -46,4 +46,15 @@ export const settings = {
      */
     defender: "strict" as "strict" | "lenient" | "off",
   },
+  /**
+   * Agentic REPO-review panel (#72) — expert personas (Architect, Testing-expert)
+   * reviewing the whole project. OFF by default: it's the expensive judgment tier
+   * (several LLM calls over assembled repo context), so it's opt-in and meant for
+   * `init` / on-demand, not every `score repo`.
+   */
+  repoReview: {
+    enabled: false,
+    /** Orchestrate the panel with Mastra (#72) instead of the hand-rolled loop. */
+    useMastra: false,
+  },
 };

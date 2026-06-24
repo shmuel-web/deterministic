@@ -18,12 +18,16 @@
     "score:repo": "tsx src/cli.ts score repo",
     "deterministic:baseline": "tsx src/cli.ts init",
     "calibrate": "tsx tests/calibration/run.mts",
+    "bench:llm": "tsx tests/perf/run.mts",
     "test": "tsx --test tests/contract/*.test.ts tests/unit/*.test.ts tests/integration/*.test.ts",
     "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary npm test",
     "lint": "eslint .",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.74",
+    "@mastra/core": "^1.46.0",
+    "ai": "^6.0.209",
     "zod": "^3.23.8"
   },
   "devDependencies": {

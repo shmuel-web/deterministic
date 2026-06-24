@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ExecResult } from "./exec.js";
 
 /**
  * THE RULE CONTRACT v2 — the frozen keystone (constitution Principle I).
@@ -50,12 +51,28 @@ export interface ModelClient {
   complete(prompt: string, opts?: CompleteOptions): Promise<string>;
 }
 
-/** What a rule receives. `model` is present only for LLM rules (Orchestrator-injected). */
+/**
+ * The EXECUTION capability (#70): run one allowlisted project command and read
+ * its output. Injected into `RuleContext.exec` by the Orchestrator ONLY for rules
+ * that declare `needsExec` AND only when execution is opted in (off by default —
+ * running commands is the scariest capability, so it's explicit). Backed by
+ * `safeExec`: no shell, allowlist-gated, hard timeout, and it NEVER throws — a
+ * rejected/failed command comes back as `{ ok: false }`, a neutral signal the
+ * rule scores from without crashing the run.
+ */
+export type RuleExec = (command: string) => Promise<ExecResult>;
+
+/**
+ * What a rule receives. `model` is present only for LLM rules, and `exec` only
+ * for execution rules (`needsExec`) when execution is enabled — both are
+ * Orchestrator-injected capabilities, absent otherwise.
+ */
 export interface RuleContext {
   target: RuleTarget;
   path: string;
   content?: string;
   model?: ModelClient;
+  exec?: RuleExec;
 }
 
 /** The contract. Every rule — static or LLM, community or custom — implements this. */
@@ -64,5 +81,11 @@ export interface Rule {
   target: RuleTarget;
   type: RuleType;
   description?: string;
+  /**
+   * This rule needs the EXECUTION capability (#70 / spec 002). When true, the
+   * Orchestrator injects `ctx.exec` — but only if execution is opted in; when
+   * it's off, `ctx.exec` is absent and the rule must degrade to `{ issues: [] }`.
+   */
+  needsExec?: boolean;
   run(context: RuleContext): RuleResult | Promise<RuleResult>;
 }

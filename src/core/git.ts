@@ -4,13 +4,14 @@
 //   [minor] llm/intent-legibility  The exported function `headSha()` is missing documentation, making its purpose unclear to a reader only judging by the name and code. → Add a JSDoc comment to `headSha` explaining that it retrieves the SHA hash of the current commit HEAD using 'git rev-parse HEAD'.
 // @deterministic:end
 import { execFileSync } from "node:child_process";
-import { getCommentStyle } from "./comment-style.js";
+import { isScorable } from "./scope.js";
 
 /**
- * Git-backed repo + change detection (issue #63 / Lane 1). Git is a hard
- * dependency: `init` scores everything once, then `score repo` re-scores only
- * what `git diff` reports as changed since the last scored commit. A non-git
- * fallback (mtime/hash) is tracked separately, out of scope here.
+ * Git-backed repo + change detection (issue #63 / Lane 1). When git is present
+ * it is the richest detector: `init` scores everything once, then `score repo`
+ * re-scores only what `git diff` reports as changed since the last scored commit,
+ * and deletions fall out of the diff. The non-git fallback (mtime/hash) lives in
+ * `change-detect.ts` (#65); both share one definition of "scorable" via scope.ts.
  */
 
 function git(args: string[]): string {
@@ -27,16 +28,6 @@ export function inGitRepo(): boolean {
 
 export function headSha(): string {
   return git(["rev-parse", "HEAD"]);
-}
-
-// Vendored tooling / generated output we never score by default. (A configurable
-// include/exclude is a follow-up; this is the ESLint-style "ignore by default".)
-const DEFAULT_EXCLUDE = [".claude/", ".specify/", "dist/", "node_modules/", ".deterministic/", "DETERMINISTIC.md", "examples/"];
-
-/** Files we actually score: a known comment style, and not in an excluded path. */
-function isScorable(path: string): boolean {
-  if (DEFAULT_EXCLUDE.some((p) => path.startsWith(p))) return false;
-  return getCommentStyle(path) !== null;
 }
 
 /** All tracked, scorable source files in the repo. */

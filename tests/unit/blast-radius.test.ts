@@ -6,7 +6,7 @@ import { computeBlastRadius } from "../../src/ticket/blast-radius.js";
 const issue = (severity: "minor" | "major" | "critical") => ({ problem: "p", fix: "f", severity, ruleId: "r" });
 // git.ts flagged major → 91; index-store flagged minor → 97; model.ts clean → 100 (absent).
 const index: RepoIndex = {
-  lastSha: null,
+  lastScan: null,
   problems: { "src/core/git.ts": [issue("major")], "src/core/index-store.ts": [issue("minor")] },
   repoIssues: [],
 };

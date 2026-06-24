@@ -7,6 +7,7 @@ import path from "node:path";
 import { score } from "./score.js";
 import type { IdentifiedIssue } from "./score.js";
 import { PENALTY } from "./rule.js";
+import type { ScanMarker } from "./change-detect.js";
 
 /**
  * Problems-only score cache (Lane 1). We never store "100" — absence means clean.
@@ -16,7 +17,8 @@ import { PENALTY } from "./rule.js";
  * re-reading the tree (Principle IV). It's a gitignored derived cache.
  */
 export interface RepoIndex {
-  lastSha: string | null;
+  /** Snapshot of repo state at the last scan, by the active detector (git/mtime/hash, #65). */
+  lastScan: ScanMarker | null;
   problems: Record<string, IdentifiedIssue[]>; // path → issues (clean files absent)
   repoIssues: IdentifiedIssue[]; // repo-target rule findings (no tests, no coverage, …)
 }
@@ -26,11 +28,16 @@ const FILE = path.join(DIR, "index.json");
 
 export async function loadIndex(): Promise<RepoIndex> {
   try {
-    const idx = JSON.parse(await fs.readFile(FILE, "utf8")) as RepoIndex;
-    idx.repoIssues ??= []; // tolerate older indexes
+    // `lastSha` is the pre-#65 marker (git-only); migrate it to a git ScanMarker.
+    const raw = JSON.parse(await fs.readFile(FILE, "utf8")) as RepoIndex & { lastSha?: string | null };
+    const idx: RepoIndex = {
+      lastScan: raw.lastScan ?? (raw.lastSha ? { kind: "git", sha: raw.lastSha } : null),
+      problems: raw.problems ?? {},
+      repoIssues: raw.repoIssues ?? [], // tolerate older indexes
+    };
     return idx;
   } catch {
-    return { lastSha: null, problems: {}, repoIssues: [] };
+    return { lastScan: null, problems: {}, repoIssues: [] };
   }
 }
 
@@ -60,17 +67,48 @@ export function fileScore(index: RepoIndex, file: string): number {
   return issues ? score(issues).score : 100;
 }
 
+const clamp = (n: number): number => Math.max(0, Math.min(100, Math.round(n)));
+
+/** Sum of repo-level penalties (absolute, repo-wide problems like "no tests"). */
+function repoPenalty(index: RepoIndex): number {
+  return index.repoIssues.reduce((s, i) => s + PENALTY[i.severity], 0);
+}
+
+/** The single lowest-scoring flagged file (the repo's weakest link), or null if all clean. */
+export function worstFile(index: RepoIndex): { file: string; score: number } | null {
+  let worst: { file: string; score: number } | null = null;
+  for (const [file, issues] of Object.entries(index.problems)) {
+    const s = score(issues).score;
+    if (worst === null || s < worst.score) worst = { file, score: s };
+  }
+  return worst;
+}
+
 /**
- * Repo score (v1 — tunable, see #66). Start at 100 and subtract two things:
- *  - repo-level penalties (from repo-target rules) — absolute, repo-wide problems
- *    like "no tests" hit hard regardless of repo size;
- *  - the AVERAGE per-file deficit — normalized so a big repo isn't unfairly tanked
- *    by one bad file.
+ * Repo HEALTH (the former v1 score) — count-invariant: repo penalties plus the
+ * AVERAGE per-file deficit. Answers "how broadly clean is the tree?" — a big repo
+ * isn't tanked by one bad file. Surfaced as a SECONDARY number on the dashboard.
  */
-export function repoScore(index: RepoIndex, totalFiles: number): number {
-  const repoPenalty = index.repoIssues.reduce((s, i) => s + PENALTY[i.severity], 0);
+export function repoHealth(index: RepoIndex, totalFiles: number): number {
   let fileDeficit = 0;
   for (const issues of Object.values(index.problems)) fileDeficit += 100 - score(issues).score;
   const avgFileDeficit = totalFiles > 0 ? fileDeficit / totalFiles : 0;
-  return Math.max(0, Math.min(100, Math.round(100 - repoPenalty - avgFileDeficit)));
+  return clamp(100 - repoPenalty(index) - avgFileDeficit);
+}
+
+/**
+ * Repo SCORE v2 (#66) — the HEADLINE. Deterministic's thesis (README) is "not an
+ * average: one serious issue dominates." v1 averaged per-file deficits, which let
+ * a critical file hide in a large tree — the opposite of that promise. v2 applies
+ * the file model AT REPO SCALE: a repo is only as strong as its WORST file, on top
+ * of absolute repo-wide penalties. Averaging now lives in `repoHealth` so breadth
+ * stays visible on the dashboard, but the headline answers the real question —
+ * "is this repo safe for an agent to act on?" — by its weakest link.
+ *
+ * See docs/adr/0002-repo-score-formula-v2.md for the decision and alternatives.
+ */
+export function repoScore(index: RepoIndex): number {
+  const worst = worstFile(index);
+  const worstDeficit = worst ? 100 - worst.score : 0;
+  return clamp(100 - repoPenalty(index) - worstDeficit);
 }

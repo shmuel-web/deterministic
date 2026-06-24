@@ -7,7 +7,7 @@ import { renderReport, renderReadmeBlock, stripReadmeBlock } from "../../src/cor
 import type { RepoIndex } from "../../src/core/index-store.js";
 
 const idx: RepoIndex = {
-  lastSha: "abc",
+  lastScan: { kind: "git", sha: "abc" },
   problems: { "src/a.ts": [{ ruleId: "r", problem: "p", fix: "f", severity: "major" }] },
   repoIssues: [{ ruleId: "static/ci-runs-tests", problem: "no test job", fix: "add one", severity: "major" }],
 };
