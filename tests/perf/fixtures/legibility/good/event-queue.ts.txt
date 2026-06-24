@@ -1,0 +1,22 @@
+/**
+ * A first-in-first-out queue of pending events, used by the scheduler to hold
+ * work until a worker is free. Bounded only by memory; callers drain it via poll().
+ */
+export class EventQueue<T> {
+  private readonly pending: T[] = [];
+
+  /** Add an event to the back of the queue. */
+  enqueue(event: T): void {
+    this.pending.push(event);
+  }
+
+  /** Remove and return the oldest event, or undefined when the queue is empty. */
+  poll(): T | undefined {
+    return this.pending.shift();
+  }
+
+  /** How many events are currently waiting. */
+  get size(): number {
+    return this.pending.length;
+  }
+}

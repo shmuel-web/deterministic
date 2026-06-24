@@ -1,0 +1,23 @@
+import { readFileSync } from "node:fs";
+
+/**
+ * Reads a coverage-summary.json report and returns the overall line-coverage
+ * percentage, or null when the report is missing or malformed. Pure I/O — it never
+ * runs the test suite; callers decide what to do with a null.
+ */
+export function readLineCoverage(reportPath: string): number | null {
+  try {
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as {
+      total?: { lines?: { pct?: number } };
+    };
+    const pct = report.total?.lines?.pct;
+    return typeof pct === "number" ? pct : null;
+  } catch {
+    return null;
+  }
+}
+
+/** True when line coverage meets or exceeds the required threshold. */
+export function meetsCoverageThreshold(coverage: number, threshold: number): boolean {
+  return coverage >= threshold;
+}

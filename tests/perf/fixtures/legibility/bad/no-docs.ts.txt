@@ -1,0 +1,16 @@
+import { readFileSync } from "node:fs";
+
+export function process(input) {
+  const data = JSON.parse(readFileSync(input, "utf8"));
+  const out = {};
+  for (const item of data.records) {
+    out[item.id] = item.values.filter((v) => v != null).length;
+  }
+  return out;
+}
+
+export function handle(out, threshold) {
+  return Object.entries(out)
+    .filter(([, n]) => n >= threshold)
+    .map(([id]) => id);
+}
