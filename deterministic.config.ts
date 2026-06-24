@@ -23,6 +23,12 @@ import { coverageThreshold } from "./src/rules/static/coverage-threshold.js";
 import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
 import { tsIgnoreCount } from "./src/rules/static/ts-ignore-count.js";
 import { importCount } from "./src/rules/static/import-count.js";
+import { fanIn } from "./src/rules/static/fan-in.js";
+import { namingConvention } from "./src/rules/static/naming-convention.js";
+import { functionCount } from "./src/rules/static/function-count.js";
+import { parameterCount } from "./src/rules/static/parameter-count.js";
+import { cyclomaticComplexity } from "./src/rules/static/cyclomatic-complexity.js";
+import { cognitiveComplexity } from "./src/rules/static/cognitive-complexity.js";
 import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
@@ -37,8 +43,14 @@ export const rules: Rule[] = [
   fileLength,
   missingTypes,
   functionLength,
+  functionCount,
+  parameterCount,
+  cyclomaticComplexity,
+  cognitiveComplexity,
   tsIgnoreCount,
   importCount,
+  fanIn,
+  namingConvention,
   intentLegibility,
   // repo target (presence checks — static, no model)
   repoHasTests,
