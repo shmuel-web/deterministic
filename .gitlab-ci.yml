@@ -41,6 +41,8 @@ test:
     - npx c8 --reporter=text --reporter=lcov --reporter=json-summary npm test
 
 # --- Deterministic: score the repo on every MR and branch push ---------------
+# Scores changed files, commits the refreshed annotations back to the branch,
+# and pushes so they persist between runs instead of fading away with the job.
 deterministic:
   stage: deterministic
   image: node:22
@@ -49,8 +51,13 @@ deterministic:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH'
   script:
+    - git config user.email "deterministic-ci@tikalk.dev"
+    - git config user.name "Deterministic CI"
+    - git remote set-url origin "https://oauth2:${BOARD_BOT_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
     - npm ci
-    - npm run score:repo || true
+    - npm run score:repo -- --commit || true
+    - BRANCH=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_REF_NAME}
+    - git push origin HEAD:$BRANCH || true
 
 # --- In Progress: a branch was pushed or an MR was opened for an issue -------
 board:in_progress:
