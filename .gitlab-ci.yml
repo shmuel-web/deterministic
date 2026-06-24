@@ -22,6 +22,7 @@ workflow:
 
 stages:
   - test
+  - deterministic
   - board
 
 # --- Quality gate: typecheck + tests (with coverage) -------------------------
@@ -38,6 +39,18 @@ test:
     - npm run lint
     - npm run typecheck
     - npx c8 --reporter=text --reporter=lcov --reporter=json-summary npm test
+
+# --- Deterministic: score the repo on every MR and branch push ---------------
+deterministic:
+  stage: deterministic
+  image: node:22
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+  script:
+    - npm ci
+    - npm run score:repo || true
 
 # --- In Progress: a branch was pushed or an MR was opened for an issue -------
 board:in_progress:
