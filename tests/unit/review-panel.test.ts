@@ -66,6 +66,14 @@ test("funnel: a file-grounded reviewer drops an issue citing no blast-radius fil
   assert.deepEqual(await runReviewer(architect, TICKET, BR, FILES, routeStub({ draft: ungrounded })), []);
 });
 
+test("funnel: an issue citing a file SYMBOL (not the filename) is grounded → reaches the Defender", async () => {
+  // The fix: reviewers often cite the symbol (`listSourceFiles`), not the filename.
+  // FILES content has `listSourceFiles`, so this must survive the evidence filter.
+  const symbolIssue = '{"issues":[{"problem":"listSourceFiles has no error handling for a failed git call","fix":"wrap the git call in a try/catch","severity":"minor"}]}';
+  const issues = await runReviewer(architect, TICKET, BR, FILES, routeStub({ draft: symbolIssue, refuted: false }));
+  assert.equal(issues.length, 1, "a symbol-grounded issue must not be dropped");
+});
+
 test("funnel: a grounded issue the Defender upholds is kept + attributed", async () => {
   const issues = await runReviewer(architect, TICKET, BR, FILES, routeStub({ draft: ARCH_ISSUE, refuted: false }));
   assert.equal(issues.length, 1);
