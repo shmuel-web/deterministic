@@ -27,6 +27,7 @@ import { fanIn } from "./src/rules/static/fan-in.js";
 import { namingConvention } from "./src/rules/static/naming-convention.js";
 import { functionCount } from "./src/rules/static/function-count.js";
 import { parameterCount } from "./src/rules/static/parameter-count.js";
+import { cyclomaticComplexity } from "./src/rules/static/cyclomatic-complexity.js";
 import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
@@ -43,6 +44,7 @@ export const rules: Rule[] = [
   functionLength,
   functionCount,
   parameterCount,
+  cyclomaticComplexity,
   tsIgnoreCount,
   importCount,
   fanIn,
