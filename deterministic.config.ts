@@ -24,6 +24,7 @@ import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
 import { tsIgnoreCount } from "./src/rules/static/ts-ignore-count.js";
 import { importCount } from "./src/rules/static/import-count.js";
 import { fanIn } from "./src/rules/static/fan-in.js";
+import { namingConvention } from "./src/rules/static/naming-convention.js";
 import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
@@ -41,6 +42,7 @@ export const rules: Rule[] = [
   tsIgnoreCount,
   importCount,
   fanIn,
+  namingConvention,
   intentLegibility,
   // repo target (presence checks — static, no model)
   repoHasTests,
