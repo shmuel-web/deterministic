@@ -36,6 +36,23 @@ export function listSourceFiles(): string[] {
 }
 
 /**
+ * Stage the given files and create a commit with the standard annotation message.
+ * No-op if nothing is staged after `git add` (files were already up-to-date).
+ * Throws if git commit fails (bad identity, hook rejection, etc.).
+ */
+export function commitAnnotations(files: string[]): void {
+  if (files.length === 0) return;
+  git(["add", "--", ...files]);
+  try {
+    git(["diff", "--cached", "--quiet"]);
+    // exit 0 → nothing staged, nothing to commit
+  } catch {
+    // exit non-zero → staged changes exist, proceed
+    git(["commit", "-m", "chore: apply deterministic annotations"]);
+  }
+}
+
+/**
  * Files changed since `sinceSha` (committed diffs) PLUS uncommitted working-tree
  * changes and untracked files. Deletions are included so the index can drop them.
  * If `sinceSha` is null/unknown, returns all source files (treat as a full scan).

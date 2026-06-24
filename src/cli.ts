@@ -13,7 +13,7 @@ const HELP = `deterministic — a linter for AI coding agents
 
 Usage:
   deterministic init                     first run: score & annotate the whole repo (expensive)
-  deterministic score repo               recompute the repo score (cheap, incremental)
+  deterministic score repo [--commit]    recompute the repo score (cheap, incremental)
   deterministic score ticket <path>      score a ticket
   deterministic validate ticket <path>   run tests/checks + re-score touched files → confirm done
 
@@ -45,7 +45,7 @@ async function main(): Promise<void> {
       await init();
       break;
     case "score":
-      if (sub === "repo") await scoreRepo();
+      if (sub === "repo") await scoreRepo({ commit: rest.includes("--commit") });
       else if (sub === "ticket") await scoreTicket(rest[0]);
       else unknown(`score ${sub ?? ""}`.trim());
       break;
