@@ -106,3 +106,20 @@ test("funnel: a ticket-grounded reviewer (PM) keeps a scope issue with NO file c
 test("funnel: unparseable draft → no fabricated issues", async () => {
   assert.deepEqual(await runReviewer(architect, TICKET, BR, FILES, stub("sorry, I cannot help")), []);
 });
+
+test("oversize blast radius errors with a 'split the ticket' finding, not truncation (#87)", async () => {
+  const prev = settings.review.maxTotalBytes;
+  settings.review.maxTotalBytes = 10; // any real file exceeds this
+  try {
+    let called = false;
+    const spy: ModelClient = { complete: async () => ((called = true), '{"issues":[]}') };
+    const { issues } = await withReview(true, () => runPanel("Change the enum in src/core/git.ts", spy));
+    assert.equal(issues.length, 1);
+    assert.equal(issues[0]!.severity, "major");
+    assert.match(issues[0]!.problem, /too large|too broad/i);
+    assert.match(issues[0]!.fix, /split/i);
+    assert.equal(called, false, "the panel errors before calling any reviewer");
+  } finally {
+    settings.review.maxTotalBytes = prev;
+  }
+});

@@ -176,24 +176,49 @@ async function survivesDefender(
 }
 
 /** Read the content of the ticket's blast-radius files, bounded by settings. */
-async function gatherBlastRadius(ticket: string): Promise<BlastFile[]> {
-  if (!inGitRepo()) return [];
-  let files: string[];
+/** Either the whole-file blast radius, or a signal that it's too big to review in one pass. */
+type BlastResult = { files: BlastFile[] } | { tooLarge: string };
+
+/**
+ * Gather the blast-radius files WHOLE (no truncation — a half-function reads as
+ * broken code, #87). If the radius exceeds the single-pass limits, return a
+ * `tooLarge` signal instead of truncating or blowing the context window; the
+ * caller turns that into a "split the ticket" finding. Chunked multi-pass review
+ * for large radii is a follow-up.
+ */
+async function gatherBlastRadius(ticket: string): Promise<BlastResult> {
+  if (!inGitRepo()) return { files: [] };
+  let paths: string[];
   try {
-    files = resolveBlastRadius(ticket, listSourceFiles());
+    paths = resolveBlastRadius(ticket, listSourceFiles());
   } catch {
-    return [];
+    return { files: [] };
   }
-  const out: { path: string; content: string }[] = [];
-  for (const path of files.slice(0, settings.review.maxFiles)) {
+  if (paths.length > settings.review.maxFiles) return { tooLarge: `${paths.length} files` };
+
+  const files: BlastFile[] = [];
+  let total = 0;
+  for (const path of paths) {
+    let content: string;
     try {
-      const content = await fs.readFile(path, "utf8");
-      out.push({ path, content: content.slice(0, settings.review.maxBytesPerFile) });
+      content = await fs.readFile(path, "utf8"); // whole file — never truncated
     } catch {
-      // unreadable (deleted, binary, race) — skip; never fabricate grounding.
+      continue; // unreadable (deleted, binary, race) — skip; never fabricate grounding
     }
+    total += Buffer.byteLength(content);
+    if (total > settings.review.maxTotalBytes) return { tooLarge: `${Math.round(total / 1024)} KB+` };
+    files.push({ path, content });
   }
-  return out;
+  return { files };
+}
+
+/** Panel-level error (not a reviewer finding): the change is too broad to review in one pass. */
+function blastTooLarge(size: string): RuleIssue {
+  return {
+    problem: `[Panel] this ticket's blast radius is too large to review in one pass (${size}) — the change is too broad`,
+    fix: "split this ticket into smaller, focused changes, each touching a small related set of files",
+    severity: "major",
+  };
 }
 
 /**
@@ -250,7 +275,9 @@ export const reviewPanel: Rule = {
     if (!model) return { issues: [] }; // defensive: orchestrator requires a model for llm rules
 
     const ticket = content ?? "";
-    const files = await gatherBlastRadius(ticket);
+    const blast = await gatherBlastRadius(ticket);
+    if ("tooLarge" in blast) return { issues: [blastTooLarge(blast.tooLarge)] }; // #87: error, don't truncate
+    const files = blast.files;
     if (files.length === 0) return { issues: [] }; // FR-008: no grounding → stay silent
 
     const blastRadius = files.map((f) => `=== ${f.path} ===\n${f.content}`).join("\n\n");
