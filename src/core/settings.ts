@@ -28,30 +28,6 @@ export const settings = {
     timeoutMs: 120_000,
   },
   /**
-   * Agentic ticket-review panel (spec 004) — the multi-reviewer panel that reads
-   * the blast-radius files. OFF by default: it's the most expensive tier (many
-   * LLM calls), so it's opt-in and runs only on-demand (`score ticket`).
-   */
-  review: {
-    enabled: false,
-    /**
-     * Single-pass review limits. Files are fed to reviewers WHOLE (no truncation —
-     * a half-function reads as broken code). If the blast radius exceeds these, the
-     * panel ERRORS with a "split the ticket" finding rather than truncate or blow
-     * the context window. Chunked multi-pass review for large radii is a follow-up.
-     */
-    maxFiles: 12,
-    maxTotalBytes: 80_000, // ≈ 20k tokens — leaves room for ticket + prompt + output in a 32k window
-    /**
-     * Adversarial Defender (spec 004, FR-006): challenges each drafted issue,
-     * keeping only those that survive. The anti-overshoot knob:
-     *   "strict"  — high bar; refute unless concretely material (default).
-     *   "lenient" — only refute the clearly-spurious.
-     *   "off"     — no Defender pass (for ablation / measuring its effect).
-     */
-    defender: "strict" as "strict" | "lenient" | "off",
-  },
-  /**
    * Agentic REPO-review panel (#72) — expert personas (Architect, Testing-expert)
    * reviewing the whole project. OFF by default: it's the expensive judgment tier
    * (several LLM calls over assembled repo context), so it's opt-in and meant for

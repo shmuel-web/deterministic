@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "A linter for AI coding agents — validates the task, the repo, and the execution.",
+  "description": "A linter for AI coding agents — validates the repo and the execution.",
   "bin": {
     "deterministic": "dist/src/cli.js"
   },
@@ -17,7 +17,6 @@
     "deterministic": "tsx src/cli.ts",
     "score:repo": "tsx src/cli.ts score repo",
     "deterministic:baseline": "tsx src/cli.ts init",
-    "calibrate": "tsx tests/calibration/run.mts",
     "bench:llm": "tsx tests/perf/run.mts",
     "test": "tsx --test tests/contract/*.test.ts tests/unit/*.test.ts tests/integration/*.test.ts",
     "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary npm test",

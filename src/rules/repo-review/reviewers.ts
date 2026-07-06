@@ -1,10 +1,10 @@
 import type { Severity } from "../../core/rule.js";
 
 /**
- * Reviewer personas for the agentic REPO-review panel (#72) — distinct from the
- * ticket panel (spec 004). Each is a bounded LENS on the project as a whole; the
- * charter names the ONE concern it judges and its NON-GOALS so personas don't
- * overlap. Extensible (security, performance) by adding to REPO_PANEL.
+ * Reviewer personas for the agentic REPO-review panel (#72). Each is a bounded
+ * LENS on the project as a whole; the charter names the ONE concern it judges and
+ * its NON-GOALS so personas don't overlap. Extensible (security, performance) by
+ * adding to REPO_PANEL.
  */
 export interface RepoReviewer {
   /** Display name, prefixed onto each issue for attribution (ruleId `repo-review/<id>`). */
@@ -50,7 +50,6 @@ export const REPO_PANEL: RepoReviewer[] = [architect, testingExpert];
 /**
  * A reviewer's drafting prompt. The guardrails ARE the design: silence by default,
  * applicability + materiality, and evidence grounded in the assembled context.
- * Same anti-overshoot shape as the ticket panel's `buildReviewerPrompt`.
  */
 export function buildRepoReviewerPrompt(reviewer: RepoReviewer, context: string): string {
   return `You are ${reviewer.role}, reviewing the project below.

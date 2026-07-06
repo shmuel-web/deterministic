@@ -58,9 +58,8 @@ export function remove(index: RepoIndex, file: string): void {
 
 /**
  * A single file's cached score: derived from its stored issues, or 100 when the
- * file is absent (clean — we never store 100). This is the read seam the ticket
- * module composes its blast-radius base from — read-only, never re-scores a file
- * (spec 003, FR-004). Lives in `core` so both module sides may use it (ADR-0001).
+ * file is absent (clean — we never store 100). Read-only — reading a cached score
+ * never re-scores the file.
  */
 export function fileScore(index: RepoIndex, file: string): number {
   const issues = index.problems[file];

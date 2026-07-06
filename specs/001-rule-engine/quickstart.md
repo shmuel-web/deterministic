@@ -10,13 +10,11 @@
 ```bash
 deterministic init                      # first run: score & annotate the whole repo (expensive)
 deterministic score repo                # recompute the repo score (cheap, incremental)
-deterministic score ticket <path>       # score a ticket
-deterministic validate ticket <path>    # run tests/checks + re-score touched files → confirm done
 ```
-File scoring is the **internal atomic unit** these compose — not a public command. (`init`, `score repo`, and `validate` all score files internally.)
+File scoring is the **internal atomic unit** these compose — not a public command. (`init` and `score repo` both score files internally.)
 
 ## Run the keystone (Lane 0)
-The public commands above are Lanes 1–3 (stubs for now). The Lane 0 engine is exercised via the internal/dev `file` command:
+The public commands above are Lane 1 (stubs for now). The Lane 0 engine is exercised via the internal/dev `file` command:
 ```bash
 npm install
 npm run deterministic file src/core/orchestrator.ts

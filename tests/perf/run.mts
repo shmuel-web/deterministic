@@ -10,7 +10,7 @@ import { loadFixtures, runVariant, renderTable, VARIANTS } from "./llm-tuning.js
  *
  * No model available → prints how to connect one and exits 0 (this is the
  * "prepared, connect later" state, not a failure). With Ollama up it prints the
- * before/after table that ticket #64 asks for.
+ * before/after table that #64 asks for.
  */
 
 const here = path.dirname(fileURLToPath(import.meta.url));

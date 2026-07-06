@@ -8,7 +8,7 @@ against them.
 ## Core Principles
 
 ### I. The Rule Contract Is the Frozen Keystone
-Everything scores through one interface: `Rule { id, target: file|repo|ticket, type: static|llm, run(context) → { issues: [{ problem, fix, severity }] } }`.
+Everything scores through one interface: `Rule { id, target: file|repo, type: static|llm, run(context) → { issues: [{ problem, fix, severity }] } }`.
 - A rule does NOT return a score. It returns the **issues** it found — each a concrete problem with a `fix` and a `severity`. The engine derives the score (see Principle III). This makes praise structurally impossible: no issues ⟺ a clean 100.
 - The contract MUST stay language-agnostic. Language-specific logic (TS, etc.) lives *inside* individual rules, never in the interface.
 - A score is computed from issues — never from one monolithic prompt that "vibes a number."
@@ -16,9 +16,9 @@ Everything scores through one interface: `Rule { id, target: file|repo|ticket, t
 
 ### II. Determinism Where It's Achievable, Judgment Where It Isn't
 The mix of static and LLM rules is a property of the *target*, not a fallback ranking — both kinds run and compose into one score.
-- **Code (files, tasks) leans deterministic:** linters, AST checks, type checks, coverage — repeatable scripts carry the score. This is where the name *Deterministic* is most literal.
-- **Tickets lean on judgment:** an LLM evaluates what no script can — is the intent legible, is the scope coherent, *how good* is the Definition of Done.
-- **Static and LLM are complementary, not alternatives.** One concern often needs both: a static rule checks a ticket *has* a Definition of Done (present/absent, no model needed); an LLM rule judges the *quality* of that DoD. Both are real signals on the same target.
+- **Code leans deterministic:** linters, AST checks, type checks, coverage — repeatable scripts carry the score. This is where the name *Deterministic* is most literal.
+- **Judgment fills the gap:** an LLM evaluates what no script can — is the intent legible, is the scope coherent, is the code doing what it claims.
+- **Static and LLM are complementary, not alternatives.** One concern often needs both: a static rule checks a function *has* a doc comment (present/absent, no model needed); an LLM rule judges whether that comment is actually legible. Both are real signals on the same target.
 - An LLM is REQUIRED — judgment rules are never silently skipped. A run with no model configured (local or remote) is an error, not a degraded pass.
 
 ### III. The Score Is Derived From Issues
@@ -28,8 +28,8 @@ No black-box numbers, and no praise.
 - Every point lost MUST map to a named issue with a concrete `fix`. If a rule can't name a fix, it has no business deducting. "Measured, not assumed" is literal.
 
 ### IV. Annotations Compose Up
-The file is the atomic scoring unit. Repo and ticket scores are composites.
-- Repo/ticket scores MUST be composed from persisted file annotations plus target-level traits — never by re-reading the whole tree.
+The file is the atomic scoring unit. The repo score is a composite.
+- The repo score MUST be composed from persisted file annotations plus repo-level traits — never by re-reading the whole tree.
 - Scoring MUST be incremental: touch a file → re-annotate that one file → higher-level scores update cheaply. No O(whole-repo) runs.
 
 ### V. Local-First — but an LLM Is Always Required

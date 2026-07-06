@@ -27,8 +27,8 @@ A self-contained scoring unit (see contract).
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `id` | string | namespaced, e.g. `static/file-length`, `llm/dod-quality` |
-| `target` | enum | `file` \| `repo` \| `ticket` |
+| `id` | string | namespaced, e.g. `static/file-length`, `llm/intent-legibility` |
+| `target` | enum | `file` \| `repo` |
 | `type` | enum | `static` \| `llm` |
 | `run(context)` | fn | returns `RuleResult` (sync or async) |
 
@@ -38,8 +38,8 @@ What a rule receives.
 | Field | Type | Notes |
 |-------|------|-------|
 | `target` | enum | the target kind |
-| `path` | string | file path / repo root / ticket path |
-| `content` | string? | file or ticket content; absent for repo-level rules |
+| `path` | string | file path / repo root |
+| `content` | string? | file content; absent for repo-level rules |
 | `model` | ModelClient? | present only for LLM rules (injected by Orchestrator) |
 
 ### IdentifiedIssue
@@ -52,7 +52,7 @@ What a rule receives.
 
 | Field | Type | Rules |
 |-------|------|-------|
-| `target` | enum | `file` \| `repo` \| `ticket` |
+| `target` | enum | `file` \| `repo` |
 | `path` | string | identifies the scored thing |
 | `score` | number | 0–100, the derived score |
 | `issues` | IdentifiedIssue[] | the findings (the audit trail). No timestamp — it only churns diffs. |
@@ -80,21 +80,6 @@ Score: `100 − 9 (major) − 3×3 (three minors) = 82`… here shown as 64 with
 // @deterministic score: 100/100 — no issues
 // @deterministic:end
 ```
-
-## Concrete example — a ticket (Markdown), DoD pair (Principle II)
-
-Markdown has no line comment, so the block uses an HTML comment (non-rendering):
-
-```md
-<!-- @deterministic score: 67/100
-  [major] static/ticket-has-dod  no 'Definition of Done' / acceptance-criteria section → add measurable acceptance criteria
-  [major] llm/undefined-validation-path  no stated way to verify completion → describe how 'done' is checked
--->
-# DET-42: Improve dashboard performance
-...
-```
-
-Determinism + judgment composing on one concern: a **static** rule finds the DoD *absent*; an **LLM** rule names what verification is missing.
 
 ## Validation & edge rules
 - A rule result failing `RuleResultSchema` → the rule is dropped with a warning; the run continues (FR-002).

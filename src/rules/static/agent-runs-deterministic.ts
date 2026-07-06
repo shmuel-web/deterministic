@@ -4,9 +4,8 @@ import type { Rule } from "../../core/rule.js";
 
 const CONTEXT_FILES = ["CLAUDE.md", "AGENTS.md", ".cursorrules", ".github/copilot-instructions.md", "GEMINI.md"];
 
-// The agent must be told to run Deterministic at both ends of its loop.
-const BEFORE = /deterministic score ticket|deterministic task/i;
-const AFTER = /deterministic score repo|deterministic validate/i;
+// The agent must be told to run Deterministic after making changes.
+const RUNS_DETERMINISTIC = /deterministic score repo|deterministic init/i;
 
 async function read(p: string): Promise<string> {
   try {
@@ -18,9 +17,9 @@ async function read(p: string): Promise<string> {
 
 /**
  * Repo rule (the keystone of adoption): is the coding agent actually wired to RUN
- * Deterministic? The whole system is dormant otherwise — task and execution
- * validation never happen. The agent's context file should tell it to run
- * `score ticket` before starting and `score repo` / `validate ticket` after.
+ * Deterministic? The whole system is dormant otherwise — the repo is never
+ * re-scored and issues never surface. The agent's context file should tell it to
+ * run `deterministic score repo` after making changes.
  *
  * Stays silent when there's no agent-context file at all — `has-agent-context`
  * owns that gap, so we don't double-penalize.
@@ -36,16 +35,13 @@ export const agentRunsDeterministic: Rule = {
     if (present.length === 0) return { issues: [] }; // no context file → has-agent-context owns it
 
     const blob = present.join("\n");
-    const missing: string[] = [];
-    if (!BEFORE.test(blob)) missing.push("`deterministic score ticket` before starting work");
-    if (!AFTER.test(blob)) missing.push("`deterministic score repo` / `validate ticket` after changes");
-    if (missing.length === 0) return { issues: [] };
+    if (RUNS_DETERMINISTIC.test(blob)) return { issues: [] };
 
     return {
       issues: [
         {
-          problem: `agent context doesn't instruct running Deterministic (missing: ${missing.join("; ")})`,
-          fix: "in CLAUDE.md/AGENTS.md, tell the agent to run `deterministic score ticket` before work and `deterministic score repo` after changes",
+          problem: "agent context doesn't instruct running Deterministic (`deterministic score repo` after changes)",
+          fix: "in CLAUDE.md/AGENTS.md, tell the agent to run `deterministic score repo` after making changes",
           severity: "major",
         },
       ],

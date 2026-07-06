@@ -31,7 +31,7 @@ const OLLAMA_MODEL = process.env.DETERMINISTIC_OLLAMA_MODEL ?? "gemma4";
 /**
  * Model tiers (#86) — route a task to an appropriately-sized model:
  *   tiny   — boolean / extraction (the applicability gate, coverage-% read)
- *   scoped — single-concern judgment (intent-legibility, ticket rules)
+ *   scoped — single-concern judgment (intent-legibility)
  *   deep   — code-grounded multi-file judgment (the panel reviewers)
  * Each defaults to the base model, so tiering is a NO-OP until you point a tier at
  * a smaller/faster model via env (e.g. DETERMINISTIC_OLLAMA_MODEL_TINY=gemma3:1b).

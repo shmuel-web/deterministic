@@ -9,7 +9,7 @@ engine derives the score. This makes praise structurally impossible.
 ## TypeScript shape
 
 ```ts
-export type RuleTarget = "file" | "repo" | "ticket";
+export type RuleTarget = "file" | "repo";
 export type RuleType = "static" | "llm";
 export type Severity = "info" | "minor" | "major" | "critical";
 

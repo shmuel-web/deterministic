@@ -9,7 +9,7 @@ import { parseDraft } from "./panel.js";
 /**
  * The agentic repo-review panel orchestrated with **Mastra** (#72) — this is the
  * tier where Mastra earns its place (multiple expert agents + shared context +
- * reconciliation), as the ticket calls for. It mirrors the hand-rolled `panel.ts`
+ * reconciliation). It mirrors the hand-rolled `panel.ts`
  * exactly — Scout → reviewers → Arbitrator — but each reviewer is a Mastra `Agent`
  * instead of a raw model call.
  *

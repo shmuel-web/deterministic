@@ -36,7 +36,7 @@ cp ../../.env.example ../../.env     # already points at 127.0.0.1:7777 with the
 ## Use it
 ```bash
 # from the repo root, with .env in place — every LLM call is traced
-deterministic score ticket <path>
+deterministic score repo
 ```
 Open Langfuse → **Tracing** → one trace per run, nested `run → reviewer → call`.
 

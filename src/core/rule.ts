@@ -13,7 +13,7 @@ import type { ExecResult } from "./exec.js";
  * individual rules, never here. See specs/001-rule-engine/contracts/rule-contract.md.
  */
 
-export type RuleTarget = "file" | "repo" | "ticket";
+export type RuleTarget = "file" | "repo";
 export type RuleType = "static" | "llm";
 
 /** Issue severity → penalty, on a clean 3× geometric scale. */

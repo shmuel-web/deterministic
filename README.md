@@ -1,6 +1,6 @@
 # Deterministic
 
-**A linter for AI coding agents.** Writing code is cheap now; shipping bad code still isn't. Deterministic scores the *task*, the *repo*, and the *execution* so AI-driven delivery is verifiable — not just fast.
+**A linter for AI coding agents.** Writing code is cheap now; shipping bad code still isn't. Deterministic scores the *repo* and the *execution* so AI-driven delivery is verifiable — not just fast.
 
 It runs locally, leaves a small honest footprint in your files, and we build it with itself.
 
@@ -19,8 +19,6 @@ No issues → 100. It's not an average, so passing checks can't inflate a score 
 ```bash
 deterministic init            # first run: score & annotate the whole repo, build the index
 deterministic score repo      # cheap: re-score only what git says changed
-deterministic score ticket    # is this task well-specified enough to act on?   (coming)
-deterministic validate ticket # after the agent: run checks + re-score the diff (coming)
 ```
 
 ## Where results live (the footprint is a guest)
@@ -37,7 +35,7 @@ LLM rules run on a **local model by default** (Ollama + Gemma 4) — no API keys
 
 ## Observability (dev) — _planned ([#90](https://gitlab.tikalk.dev/tikalk/fuse/2026/team-7-deterministic/-/issues/90))_
 
-Deterministic runs real multi-step LLM workflows — chiefly the **reviewer panel**: four expert agents (Architect · Developer · QA · PM), each run through a funnel (applicability gate → draft → evidence filter → adversarial Defender), then synthesized. To *see what the agents are actually doing on your machine*, development runs trace every LLM call to a **self-hosted [Langfuse](https://langfuse.com)** — configured via `.env`, and **never shipped in the tool**.
+Deterministic runs real multi-step LLM workflows — chiefly the **repo-review panel**: expert personas (Architect · Testing-expert) that review the whole project and reconcile their findings through an Arbitrator. To *see what the agents are actually doing on your machine*, development runs trace every LLM call to a **self-hosted [Langfuse](https://langfuse.com)** — configured via `.env`, and **never shipped in the tool**.
 
 The reasoning behind the shape:
 
@@ -49,7 +47,6 @@ The reasoning behind the shape:
 ## Docs
 
 - [`docs/architecture.md`](docs/architecture.md) — the one-page architecture
-- [`docs/adr/0001-separable-ticket-module.md`](docs/adr/0001-separable-ticket-module.md) — why ticket scoring is a separable module
 - `.specify/memory/constitution.md` — the project's principles
 
 ## Stack

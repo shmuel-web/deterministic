@@ -23,7 +23,7 @@ This makes the annotation a **feedback channel to the next AI agent**: the next 
 - **Idempotent**: the writer finds the existing `@deterministic` block by its sentinel and replaces it; otherwise inserts at the top of the file. Re-scoring never appends duplicates.
 - **Self-stripping**: the scorer removes Deterministic's own block from the content *before* running rules, so the annotation never skews a score (e.g. `file-length` must not count the annotation's own lines).
 - **Comment-style resolution**: an extension → comment-syntax map. Files with no comment syntax (e.g. JSON) fall back to a sibling `<name>.deterministic.md` sidecar.
-- **Source of truth = the files themselves.** Repo/ticket composition reads the in-file blocks of changed files (incremental — Principle IV); an aggregate index is an optional later optimization, not required for Lane 0.
+- **Source of truth = the files themselves.** Repo composition reads the in-file blocks of changed files (incremental — Principle IV); an aggregate index is an optional later optimization, not required for Lane 0.
 
 **Rationale**: Closes the agent feedback loop directly; committed + diffable + demo-ready ("files wearing their annotations").
 
@@ -31,7 +31,7 @@ This makes the annotation a **feedback channel to the next AI agent**: the next 
 
 ## D3. Reviewer agents — how much to build in Lane 0
 
-**Decision**: Lane 0 ships the `ModelClient` seam and a **single reviewer path** for LLM rules (one model call per LLM rule, validated). The full multi-perspective panel (Scout → Architect/Implementation/PM → Arbitrator agent) is defined as interfaces in `agents/roles.ts` and staged for the multi-agent lane. The pure-function `arbitrate()` already covers static aggregation.
+**Decision**: Lane 0 ships the `ModelClient` seam and a **single reviewer path** for LLM rules (one model call per LLM rule, validated). The full multi-perspective panel (Architect/Implementation/PM → Arbitrator agent) is defined as interfaces in `agents/roles.ts` and staged for the multi-agent lane. The pure-function `arbitrate()` already covers static aggregation.
 
 **Rationale**: The keystone must run end-to-end and unblock rule authoring today. Multi-agent richness is rubric-valuable but additive — it slots behind the same contract without reshaping it.
 

@@ -50,7 +50,7 @@ test("enabled: records a generation per call, nested under run → span, then fl
   await initTracing({ sink: f.sink });
   assert.equal(tracingActive(), true);
 
-  await withTrace("score ticket: T.md", async () => {
+  await withTrace("score repo: R.md", async () => {
     await withSpan("Architect", async () => {
       await traced(ECHO).complete("gate?", { label: "gate" });
       await traced(ECHO).complete("draft?", { label: "draft" });
@@ -59,7 +59,7 @@ test("enabled: records a generation per call, nested under run → span, then fl
 
   assert.equal(f.gens.length, 2);
   assert.deepEqual(f.gens.map((x) => x.gen.name), ["gate", "draft"]);
-  assert.ok(f.gens.every((x) => x.path === "score ticket: T.md/Architect"), "calls nest under run → reviewer span");
+  assert.ok(f.gens.every((x) => x.path === "score repo: R.md/Architect"), "calls nest under run → reviewer span");
   assert.equal(f.gens[0]!.gen.input, "gate?");
   assert.equal(f.gens[0]!.gen.output, "echo:gate?");
   assert.equal(f.flushes(), 1, "trace flushed once on completion (fail-closed point)");

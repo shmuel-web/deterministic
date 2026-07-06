@@ -6,9 +6,8 @@ const HARD_CAP = 15;
 
 /**
  * Static: high fan-in (incoming imports) signals high blast radius —
- * changes to this file ripple to many dependents. Feeds the
- * ticket-complexity model directly. Needs the repo-wide import graph
- * (lazy-built, cached after first call).
+ * changes to this file ripple to many dependents. Needs the repo-wide
+ * import graph (lazy-built, cached after first call).
  */
 export const fanIn: Rule = {
   id: "static/fan-in",

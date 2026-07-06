@@ -8,25 +8,23 @@ shipped**, off by default, zero footprint when off.
 ## Setup
 1. Bring up Langfuse: `cd dev/langfuse && docker compose -p langfuse up -d` (see [`dev/langfuse/README.md`](../dev/langfuse/README.md)).
 2. `cp .env.example .env` — it's pre-filled with `DETERMINISTIC_DEV_TRACING=1` and the dev keys.
-3. Run a command that uses the LLM (e.g. `deterministic score ticket <path>`).
+3. Run a command that uses the LLM (e.g. `deterministic score repo`).
 
 > ⚠️ Use **`127.0.0.1`**, not `localhost` — an IPv6 loopback forwarder can hijack `localhost:7777` and route it to AWS (a 401). `LANGFUSE_HOST` and the browser both want `127.0.0.1:7777`.
 
 ## What you see
 One **trace per scoring run**, with spans nested to mirror the workflow:
 ```
-score ticket: <path>            (trace)
+score repo                      (trace)
   ├─ Architect                  (span)
-  │    ├─ gate        (generation: prompt, output, latency)
-  │    ├─ draft       (generation)
-  │    └─ defender    (generation)
-  ├─ Developer
-  ├─ QA
-  └─ PM
+  │    └─ draft       (generation: prompt, output, latency)
+  ├─ Testing-expert             (span)
+  │    └─ draft       (generation)
+  └─ Arbitrator       (generation)
 ```
 Each generation records the prompt, the output, and latency — so the otherwise
-opaque pipeline (which reviewer fired, what the gate decided, what the Defender
-refuted) becomes legible, and per-call latency is measured for free.
+opaque pipeline (which reviewer fired, what it drafted, how the Arbitrator
+reconciled) becomes legible, and per-call latency is measured for free.
 
 ## How it's wired (and why it's invisible when off)
 - A pluggable **`TraceSink`** seam (`src/core/tracing.ts`). Langfuse is one impl,
@@ -44,8 +42,8 @@ observe every LLM call or we don't run; there are no silent, un-traced calls.
 Unset the variable to run normally.
 
 ## Why a tool here (and not elsewhere)
-We avoid frameworks we don't need — we *declined* Mastra because the funnel is
-hand-rolled and works. But observability is a real, unmet need (otherwise
+We avoid frameworks we don't need — the hand-rolled panel is the default and
+Mastra is opt-in. But observability is a real, unmet need (otherwise
 hand-rolled badly with throwaway scripts), and Langfuse — open-source,
 self-hostable, OpenTelemetry-compatible — fits it cleanly. Same discipline both
 times: **add a tool only when the need is real.** This is also the natural home

@@ -1,8 +1,8 @@
 # Deterministic — Architecture (one page)
 
-**A linter for AI coding agents.** It scores the *task*, the *repo*, and the
-*execution* so AI-driven delivery is verifiable, not just fast. It runs locally,
-and we build it with itself.
+**A linter for AI coding agents.** It scores the *repo* and the *execution* so
+AI-driven delivery is verifiable, not just fast. It runs locally, and we build it
+with itself.
 
 ## The one idea
 **Rules find issues; the engine derives the score.** A rule never returns a
@@ -21,7 +21,7 @@ structurally impossible.
 ## The contract (frozen keystone)
 Everything builds against one interface (`src/core/rule.ts`):
 ```ts
-Rule { id, target: file|repo|ticket, type: static|llm, run(ctx) → { issues: [{ problem, fix, severity }] } }
+Rule { id, target: file|repo, type: static|llm, run(ctx) → { issues: [{ problem, fix, severity }] } }
 ```
 - **Static rules** (AST/regex/counts) are fast, free, repeatable — they carry the weight.
 - **LLM rules** handle judgment, and are built with the `llmRule({ topic, lookFor })` scaffold that **scopes each to one concern** so the model can't free-associate. Local model required (Ollama/Gemma, API fallback); output is Zod-validated with retry.
@@ -29,15 +29,13 @@ Rule { id, target: file|repo|ticket, type: static|llm, run(ctx) → { issues: [{
 Changing this shape is a MAJOR governance event; *adding rules is not*. Community
 rules are the extension point (and the moat).
 
-## Three targets, one engine — and they COMPOSE
+## Two targets, one engine — and they COMPOSE
 The targets aren't independent; scores flow up a dependency chain:
 ```
-file  ──(annotations + index)──┬──▶  repo    = aggregate of file scores + repo-level rules
-                               └──▶  ticket  = avg(blast-radius file scores) − own-rule penalties
+file  ──(annotations + index)──▶  repo    = aggregate of file scores + repo-level rules
 ```
 - **file** — the atomic unit. The substrate everything composes from.
 - **repo** — `aggregate of file scores + repo-level rules`. Composed from file results + git, not by re-reading the tree.
-- **ticket** — `clamp(average(blast-radius file scores) − Σ own-rule penalties, 0, 100)`. The **base** is the average score of the files it would change (so a ticket inherits the health of the code it touches — "a ticket is as complex as the files it's going to touch"); its **own rules** (is it well-specified?) subtract spec-quality penalties. `score ticket` **consumes** cached file scores — one-directional, never re-scores files itself (see specs/003-score-ticket). The **repo score is deliberately excluded** (averaging the whole repo dilutes a ticket's risk *up*); it's reserved for multi-repo "which repo is safer" workflows.
 
 ## Pipeline (per file)
 ```
@@ -53,33 +51,23 @@ discover (git ls-files, ignore vendored)
 - **Incremental:** `score repo` re-scores only files `git diff` reports changed since the last scan. `init` is the one expensive full pass.
 
 ## Commands
-`init` (full scan) · `score repo` (git-incremental) · `score ticket` · `validate ticket` (run tests/checks + re-score). File scoring is the internal atomic unit (hidden `file` dev command).
+`init` (full scan) · `score repo` (git-incremental). File scoring is the internal atomic unit (hidden `file` dev command).
 
 ## Module map
 ```
 core/   rule (contract) · score (penalty sum) · orchestrator (gather+run)
         annotation (in-file) · index-store (cache) · git (change detection)
         model (Ollama→API) · llm-rule (scoped scaffold) · pool (concurrency) · comment-style
-rules/  static/* · llm/*          commands/  init · score-repo · validate-ticket · score-file
-ticket/ score-ticket · scout (blast-radius resolve) · blast-radius (avg base) · rules/* — own module (ADR-0001)
+rules/  static/* · llm/* · repo-review/*   commands/  init · score-repo · score-file
 ```
 
-## Module boundaries (separable by design — see ADR 0001)
-Code scoring and ticket scoring run in different homes (dev machine vs CI/action),
-so they're kept decoupled to allow shipping them as two tools later:
-```
-core/    shared kernel (contract, scoring, llm-rule, model, pool, orchestrator)
-code/    file+repo scoring (dev machine)        ┐ depend only on core,
-ticket/  ticket scoring (CI/action)             ┘ NEVER on each other
-cli.ts   thin umbrella — the only place they meet, discardable on a split
-```
-**Enforced hard rule:** no imports between `code/` and `ticket/` (either direction);
-both import `core/` only. A CI boundary check fails the build on violation. Splitting
-later = lift `ticket/` + `core/` into their own package/repo, drop the umbrella.
+## Module boundaries
+`rules/` and `commands/` depend only on `core/` — the shared kernel (contract,
+scoring, llm-rule, model, pool, orchestrator). `cli.ts` is the thin umbrella that
+wires the commands together.
 
 ## Properties that matter
 auditable · count-invariant scoring · incremental (git) · language-agnostic contract ·
-community-extensible rules · local-first / zero-permission · spec-driven (Spec-Kit) ·
-**separable modules** (code-scoring vs ticket-scoring).
+community-extensible rules · local-first / zero-permission · spec-driven (Spec-Kit).
 
 **Stack:** TypeScript/Node, Zod, Mastra (agent orchestration), Ollama + Gemma 4, git.

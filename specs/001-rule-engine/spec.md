@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "Lane 0 — the rule engine keystone: a frozen, language-agnostic Rule contract with validated output; model resolution (local Ollama default, user-provided API fallback, hard error if neither); an Orchestrator that gathers applicable rules and dispatches static inline / LLM to reviewer agents; an Arbitrator that composes weighted signals into one auditable score; an annotation store; a working score-file command end-to-end; and a starter rule set mixing static and LLM rules including the ticket Definition-of-Done pair."
+**Input**: User description: "Lane 0 — the rule engine keystone: a frozen, language-agnostic Rule contract with validated output; model resolution (local Ollama default, user-provided API fallback, hard error if neither); an Orchestrator that gathers applicable rules and dispatches static inline / LLM to reviewer agents; an Arbitrator that composes weighted signals into one auditable score; an annotation store; a working score-file command end-to-end; and a starter rule set mixing static and LLM rules."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -14,7 +14,7 @@
 
 A developer points the tool at a single source file and gets back a 0–100 score composed from the rules that fired, each with its weight and a one-line reason. The score is persisted as an annotation.
 
-**Why this priority**: This is the atomic unit the entire product composes from (repo and ticket scores read file annotations). Without it, nothing else exists. It is the demonstrable MVP.
+**Why this priority**: This is the atomic unit the entire product composes from (repo scores read file annotations). Without it, nothing else exists. It is the demonstrable MVP.
 
 **Independent Test**: Run the file scorer on a real file in this repo; confirm a 0–100 score, a per-rule breakdown (id, weight, reasoning) that explains the number, and an annotation written to the local store.
 
@@ -28,7 +28,7 @@ A developer points the tool at a single source file and gets back a 0–100 scor
 
 ### User Story 2 - Judgment is always available (model resolution) (Priority: P1)
 
-Because tickets and intent need judgment, an LLM must always be reachable. The engine resolves a model before scoring: local Ollama by default, a user-provided LLM API as fallback, and a hard, actionable error if neither is configured.
+Because intent needs judgment, an LLM must always be reachable. The engine resolves a model before scoring: local Ollama by default, a user-provided LLM API as fallback, and a hard, actionable error if neither is configured.
 
 **Why this priority**: Constitution Principle V — an LLM is required; judgment is never silently skipped. A partial, judgment-free score presented as complete is a correctness failure, not a degraded pass.
 
@@ -57,44 +57,29 @@ A contributor adds a new rule (static or LLM) implementing the one contract, reg
 
 ---
 
-### User Story 4 - Static and LLM rules compose on one concern (Priority: P3)
-
-A single concern can need both rule kinds. For a ticket's Definition of Done: a static rule checks it is *present*; an LLM rule judges its *quality*. Both fire on the ticket and compose into one score.
-
-**Why this priority**: Demonstrates the determinism-vs-judgment model (Principle II) end-to-end and seeds the ticket-scoring lane.
-
-**Independent Test**: Score a ticket with and without a Definition of Done; confirm the static presence rule flips, and the LLM quality rule produces a graded signal when one is present.
-
-**Acceptance Scenarios**:
-
-1. **Given** a ticket lacking a Definition of Done, **When** scored, **Then** the static presence rule scores it low and says so.
-2. **Given** a ticket with a vague Definition of Done, **When** scored, **Then** the LLM quality rule grades it below a crisp one.
-
----
-
 ### Edge Cases
 
 - **No applicable rules for a target**: return a neutral score with an explicit note ("no rules fired"), never a silent 0.
 - **Model becomes unreachable mid-run**: fail fast with a clear error (Principle V) — do not silently drop judgment rules.
 - **A rule throws**: isolate the failure to that rule; the rest of the score still composes.
 - **Rule inert for the input** (e.g. a TypeScript-specific rule on a non-TS file): contribute a neutral/explained signal, do not penalize.
-- **Oversized file/ticket content for an LLM rule**: bound what is sent to the model; never fail because content is large.
+- **Oversized file content for an LLM rule**: bound what is sent to the model; never fail because content is large.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST define ONE rule contract — `id`, `target` (file | repo | ticket), `type` (static | llm), and `run(context) → { score 0–100, weight, reasoning }`. The contract MUST be language-agnostic; language-specific logic lives inside rules.
+- **FR-001**: The system MUST define ONE rule contract — `id`, `target` (file | repo), `type` (static | llm), and `run(context) → { score 0–100, weight, reasoning }`. The contract MUST be language-agnostic; language-specific logic lives inside rules.
 - **FR-002**: The system MUST validate every rule's output against a schema; a malformed signal MUST be rejected/skipped with a warning, never abort the run.
 - **FR-003**: The Orchestrator MUST gather the rules applicable to a target and execute them — static rules inline, LLM rules via the reviewer agents.
 - **FR-004**: The Arbitrator MUST compose signals into a single 0–100 score using transparent weighting, and the result MUST enumerate every contributing rule with its weight and reasoning (auditable — Principle III).
 - **FR-005**: The system MUST resolve a model before any run: local Ollama by default, user-provided LLM API as fallback, and a hard actionable error if neither is configured. Judgment rules MUST NOT be silently skipped (Principle V).
 - **FR-006**: LLM rule output MUST be schema-validated with validate-and-retry; malformed responses MUST degrade to a neutral signal, never crash a run or poison a score (Principle VI).
-- **FR-007**: The system MUST provide **internal file scoring** (the atomic unit) that scores one file end-to-end and prints the auditable breakdown. It is composed by the public commands (`init`, `score repo`, `validate ticket`); it is NOT a public command (exposed directly only as a hidden `file` dev command).
+- **FR-007**: The system MUST provide **internal file scoring** (the atomic unit) that scores one file end-to-end and prints the auditable breakdown. It is composed by the public commands (`init`, `score repo`); it is NOT a public command (exposed directly only as a hidden `file` dev command).
 - **FR-008**: A file score MUST be persisted as an annotation (target, path, score, signals, timestamp), keyed so higher-level scores can compose from it incrementally without re-reading the tree (Principle IV).
 - **FR-009**: Rules MUST be registered with weights in project config; a project MUST be able to enable/disable/reweight rules without engine changes. Config weight overrides a rule's self-reported weight.
-- **FR-010**: A starter rule set MUST ship: static file rules (file length, missing types), an LLM file rule (intent legibility), and the ticket Definition-of-Done pair (static presence + LLM quality).
-- **FR-011**: The system MUST score the three deterministic targets distinctly — file rules score files; the same engine path generalizes to repo/ticket targets (built in later lanes) without contract changes.
+- **FR-010**: A starter rule set MUST ship: static file rules (file length, missing types) and an LLM file rule (intent legibility).
+- **FR-011**: The system MUST score the deterministic targets distinctly — file rules score files; the same engine path generalizes to the repo target (built in a later lane) without contract changes.
 
 ### Key Entities
 
@@ -114,11 +99,10 @@ A single concern can need both rule kinds. For a ticket's Definition of Done: a 
 - **SC-003**: A contributor can add and register a new rule touching only a rule file plus config (zero engine edits), in under 15 minutes.
 - **SC-004**: With no model configured, the tool exits with a clear, actionable error 100% of the time — it never emits a judgment-free score presented as complete.
 - **SC-005**: Re-scoring composes from a stored annotation rather than recomputing — re-running on an unchanged file does not redo upstream work.
-- **SC-006**: The Definition-of-Done concern is demonstrably scored by both a static (presence) and an LLM (quality) rule on the same ticket.
 
 ## Assumptions
 
 - Per the constitution, the stack is TypeScript/Node with a local Ollama + Gemma 4 model available on dev machines; the hackathon scope is TypeScript-only.
 - Annotations are stored in a local store by default; whether they are committed in-repo vs. kept as CI metadata is an open question deferred to the DevOps lane.
-- `init` / `score repo` (Lane 1), `score ticket` (Lane 2), and `validate ticket` (Lane 3) are later lanes; this feature delivers internal file scoring end-to-end plus the frozen contract every other lane builds on.
-- The reviewer-agent roles (Scout / Architect / Implementation / PM / Arbitrator) are the executors for LLM rules; their full multi-perspective implementation may be staged, but the contract and orchestration seam land here.
+- `init` / `score repo` (Lane 1) are later lanes; this feature delivers internal file scoring end-to-end plus the frozen contract every other lane builds on.
+- The reviewer-agent roles (Architect / Implementation / PM / Arbitrator) are the executors for LLM rules; their full multi-perspective implementation may be staged, but the contract and orchestration seam land here.

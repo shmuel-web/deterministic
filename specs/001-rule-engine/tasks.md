@@ -39,7 +39,7 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 **Goal**: `score-file <path>` → 0–100 score + per-rule breakdown + in-file annotation. **Independent test**: run it on a repo file, see the breakdown and the written `@deterministic` block.
 
 - [ ] **T012** [SYNC] [US1] Implement `src/commands/score-file.ts` — read file, strip prior annotation, run rules via Orchestrator, `arbitrate()`, write the in-file annotation block, print the breakdown. (Depends Phase 2)
-- [ ] **T013** [US1] Implement `src/cli.ts` — public commands `init` / `score repo|ticket` / `validate ticket` (stubs) + hidden internal `file <path>` dev command + help.
+- [ ] **T013** [US1] Implement `src/cli.ts` — public commands `init` / `score repo` (stubs) + hidden internal `file <path>` dev command + help.
 - [ ] **T014** [P] [US1] [ASYNC] Static rule `src/rules/static/file-length.ts` (soft cap ~300 lines). Register in config.
 - [ ] **T015** [P] [US1] [ASYNC] Static rule `src/rules/static/missing-types.ts` (penalize `any` in TS files; inert elsewhere). Register in config.
 - [ ] **T016** [US1] Integration test `tests/integration/score-file.test.ts` — score a fixture file, assert score range, breakdown present, and annotation written + idempotent on re-run (SC-001, SC-002, SC-005).
@@ -69,19 +69,9 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 
 ---
 
-## Phase 6: User Story 4 — Static + LLM compose on one concern (DoD) (P3)
-
-**Goal**: ticket scoring where a static rule checks DoD presence and an LLM rule grades DoD quality. **Independent test**: score tickets with/without a DoD.
-
-- [ ] **T024** [P] [US4] [ASYNC] Static rule `src/rules/static/ticket-has-dod.ts` (target `ticket`; present/absent). Register in config.
-- [ ] **T025** [P] [US4] [ASYNC] LLM rule `src/rules/llm/dod-quality.ts` (target `ticket`; grades quality). Register in config.
-- [ ] **T026** [US4] Integration test: score ticket fixtures (with/without DoD); assert the static rule flips and the LLM rule grades; annotation uses HTML-comment block. (SC-006)
-
----
-
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] **T027** [P] [ASYNC] Lane stubs: `init.ts` + `score-repo.ts` (Lane 1), `score-ticket.ts` (Lane 2), `validate-ticket.ts` (Lane 3) — throw "Lane N — not implemented".
+- [ ] **T027** [P] [ASYNC] Lane stubs: `init.ts` + `score-repo.ts` (Lane 1) — throw "Lane N — not implemented".
 - [ ] **T028** [P] Update `README.md` + `CLAUDE.md` with `score-file` usage and the annotation behavior.
 - [ ] **T029** Run `quickstart.md` end-to-end against this repo (dogfood); capture a real annotated file for the demo.
 
@@ -90,18 +80,17 @@ Single TS project. Engine in `src/core/`, rules in `src/rules/`, commands in `sr
 ## Dependencies & Execution Order
 
 ### Phase order
-- **Setup (P1)** → **Foundational (P2, BLOCKS everything)** → **User Stories (P3–P6)** → **Polish (P7)**.
+- **Setup (P1)** → **Foundational (P2, BLOCKS everything)** → **User Stories (P3–P5)** → **Polish (P7)**.
 
 ### User-story independence
 - **US1 (P1)** after Phase 2 — the MVP, no dependency on other stories.
 - **US2 (P1)** after Phase 2 — adds the model path; `intent-legibility` needs it.
 - **US3 (P2)** after at least one rule exists (validates DX).
-- **US4 (P3)** after Phase 2 — independent ticket-target slice.
 
 ### Parallel opportunities
 - Setup: T002, T003 in parallel.
 - Foundational: T005, T008, T011 in parallel with the T004→T006/T009/T010 chain.
-- **Rules are the big parallel front** (the "everyone writes rules" plan): T014, T015, T020, T024, T025 are all independent `[ASYNC]` units against the frozen contract once T004/T010 land.
+- **Rules are the big parallel front** (the "everyone writes rules" plan): T014, T015, T020 are all independent `[ASYNC]` units against the frozen contract once T004/T010 land.
 
 ### Suggested MVP cut
-T001–T016 (Setup + Foundational + US1) = a self-annotating `score-file` you can demo. US2 adds judgment; US4 adds the ticket DoD story.
+T001–T016 (Setup + Foundational + US1) = a self-annotating `score-file` you can demo. US2 adds judgment.

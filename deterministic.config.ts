@@ -36,7 +36,7 @@ import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
  *
  * Importance lives in each issue's `severity`, not a per-rule weight — so the
  * registry is just the enabled rule list. The orchestrator runs each rule only
- * against its declared target (file vs repo vs ticket).
+ * against its declared target (file vs repo).
  */
 export const rules: Rule[] = [
   // file target

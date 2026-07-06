@@ -9,7 +9,7 @@ every deduction auditable.
 ```ts
 interface Rule {
   id: string;          // namespaced: "static/my-rule" or "llm/my-rule"
-  target: "file" | "repo" | "ticket";
+  target: "file" | "repo";
   type: "static" | "llm";
   description?: string;
   run(context: RuleContext): RuleResult | Promise<RuleResult>;

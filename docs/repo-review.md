@@ -31,7 +31,7 @@ Files: `src/rules/repo-review/` — `scout.ts`, `reviewers.ts`, `arbitrator.ts`,
   offline test path and the zero-extra-dependency default.
 - **Mastra** (`reviewRepoWithMastra`, opt-in) — each persona is a Mastra `Agent`;
   the model is local Ollama via its OpenAI-compatible endpoint (`/v1`), so no keys
-  and nothing leaves the box (Principle V). This is the ticket's "Mastra earns its
+  and nothing leaves the box (Principle V). This is the "Mastra earns its
   place" path. The Scout/Reviewer/Arbitrator boundaries are identical, so the two
   are interchangeable.
 
