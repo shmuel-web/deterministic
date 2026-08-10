@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "A linter for AI coding agents — validates the repo and the execution.",
+  "description": "A CLI linter that combines deterministic checks with focused LLM rules.",
   "bin": {
     "deterministic": "dist/src/cli.js"
   },
@@ -20,13 +20,9 @@
     "bench:llm": "tsx tests/perf/run.mts",
     "test": "tsx --test tests/contract/*.test.ts tests/unit/*.test.ts tests/integration/*.test.ts",
     "coverage": "c8 --reporter=text --reporter=lcov --reporter=json-summary npm test",
-    "lint": "eslint .",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.74",
-    "@mastra/core": "^1.46.0",
-    "ai": "^6.0.209",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -35,7 +31,6 @@
     "c8": "^10.1.2",
     "eslint": "^9.13.0",
     "globals": "^15.11.0",
-    "langfuse": "^3.38.20",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.12.0"

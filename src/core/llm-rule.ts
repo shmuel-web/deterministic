@@ -72,10 +72,10 @@ export function llmRule(spec: LlmRuleSpec): Rule {
     type: "llm",
     description: spec.description,
     async run({ path, content, model }) {
-      if (!model) return { issues: [] }; // defensive: Orchestrator should have errored first
+      if (!model) return { issues: [] }; // defensive: the rule engine should have errored first
       let issues: RuleIssue[] | null = null;
       for (let attempt = 0; attempt <= 1 && !issues; attempt++) {
-        issues = parseIssues(await model.complete(buildPrompt(spec, path, content ?? ""), { label: spec.id }));
+        issues = parseIssues(await model.complete(buildPrompt(spec, path, content ?? "")));
       }
       if (!issues) return { issues: [] }; // unparseable after retry → don't fabricate (Principle VI)
       // Enforce the severity ceiling in code — the prompt asks, this guarantees.

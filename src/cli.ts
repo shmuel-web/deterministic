@@ -7,7 +7,6 @@
 import { init } from "./commands/init.js";
 import { scoreRepo } from "./commands/score-repo.js";
 import { scoreFile } from "./commands/score-file.js"; // internal/dev only
-import { initTracing } from "./core/tracing.js";
 
 const HELP = `deterministic — a linter for AI coding agents
 
@@ -26,16 +25,12 @@ function unknown(what: string): void {
 }
 
 async function main(): Promise<void> {
-  // Load a local .env if present (dev convenience; e.g. the #90 tracing vars).
+  // Load a local .env if present for model and concurrency settings.
   try {
     process.loadEnvFile();
   } catch {
     /* no .env — fine */
   }
-
-  // Dev tracing (#90): fail-closed — if DETERMINISTIC_DEV_TRACING is on and the
-  // trace backend is unreachable, this throws before any LLM call runs.
-  await initTracing();
 
   const [command, sub, ...rest] = process.argv.slice(2);
   switch (command) {

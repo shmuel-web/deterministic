@@ -3,7 +3,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import type { Severity } from "./rule.js";
 
-/** Shared coverage helpers for the static + agentic coverage rules. */
+/** Coverage report parsing, freshness checks, and severity bands. */
 
 export const REPORT = path.join("coverage", "coverage-summary.json");
 const CODE = /\.(ts|tsx|js|jsx|mjs|cjs|py|go|rb|java|kt|rs)$/;

@@ -138,7 +138,7 @@ export const rules: Rule[] = [
 ];
 ```
 
-The orchestrator routes each rule to its declared `target` automatically.
+The rule engine routes each rule to its declared `target` automatically.
 
 ## Test the rule
 

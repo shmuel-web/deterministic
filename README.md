@@ -1,58 +1,80 @@
 # Deterministic
 
-**A linter for AI coding agents.** Writing code is cheap now; shipping bad code still isn't. Deterministic scores the *repo* and the *execution* so AI-driven delivery is verifiable — not just fast.
+Deterministic is a CLI linter for codebases changed by humans or AI coding
+tools. It combines repeatable static checks with small, focused LLM judgments
+and turns every finding into an auditable score.
 
-It runs locally, leaves a small honest footprint in your files, and we build it with itself.
+## How scoring works
 
-## The idea
+Rules report issues; they never choose a score. Every issue contains a problem,
+a concrete fix, and a severity. The engine applies one fixed formula:
 
-Rules find **issues**; the engine derives the **score**. A rule never returns a number — it returns the problems it found, each with a concrete `fix` and a `severity`:
+```text
+score = max(0, 100 - sum(penalties))
 
+info: 1   minor: 3   major: 9   critical: 27
 ```
-score = max(0, 100 − Σ penalty)      info −1 · minor −3 · major −9 · critical −27
-```
 
-No issues → 100. It's not an average, so passing checks can't inflate a score and one serious issue dominates. Every point lost maps to a named, fixable problem — and praise is structurally impossible.
+No findings means 100. Passing rules cannot inflate the result, and every lost
+point maps back to something actionable.
 
-## The loop
+## Rules
+
+- **Static rules** perform deterministic checks such as function length,
+  complexity, missing types, test and CI configuration, and committed secrets.
+- **LLM rules** answer one bounded question that text analysis cannot reliably
+  answer, such as whether names communicate intent. They use a local Ollama model
+  by default, with an optional OpenAI-compatible API fallback.
+
+Both kinds implement the same rule contract. There are no reviewer agents,
+multi-agent workflows, or model-selected command execution paths.
+
+## CLI
 
 ```bash
-deterministic init            # first run: score & annotate the whole repo, build the index
-deterministic score repo      # cheap: re-score only what git says changed
+npm install
+npm run build
+
+node dist/src/cli.js init
+node dist/src/cli.js score repo
 ```
 
-## Where results live (the footprint is a guest)
+During development:
 
-- **In each file** — issues are written in as native-syntax comments, but *only when there's something to fix*. Clean files are left untouched.
-- **On the README** — the repository score, one line (see below).
-- **In `DETERMINISTIC.md`** — the full dashboard: repo-level issues and an index of every flagged file.
+```bash
+npm run deterministic -- init
+npm run deterministic -- score repo
+```
 
-The mark appears only when it earns the room — minimal, removable, opt-out.
+- `init` performs the first full scan, writes annotations for flagged files,
+  and creates the local `.deterministic/` index.
+- `score repo` uses Git-aware change detection to rescore changed files and
+  refresh the repository score.
 
-## Local-first
+File scoring is the internal atomic operation. The hidden
+`deterministic file <path...>` command exists for rule development.
 
-LLM rules run on a **local model by default** (Ollama + Gemma 4) — no API keys, no cloud, no data leaving your machine. A user-provided API is the fallback. Static rules need no model at all. See [`docs/local-llm.md`](docs/local-llm.md).
+## Model configuration
 
-## Observability (dev) — _planned ([#90](https://gitlab.tikalk.dev/tikalk/fuse/2026/team-7-deterministic/-/issues/90))_
+Start Ollama on `http://localhost:11434` or configure an OpenAI-compatible API:
 
-Deterministic runs real multi-step LLM workflows — chiefly the **repo-review panel**: expert personas (Architect · Testing-expert) that review the whole project and reconcile their findings through an Arbitrator. To *see what the agents are actually doing on your machine*, development runs trace every LLM call to a **self-hosted [Langfuse](https://langfuse.com)** — configured via `.env`, and **never shipped in the tool**.
+```bash
+DETERMINISTIC_LLM_API_URL=https://example.com/v1/chat/completions
+DETERMINISTIC_LLM_API_KEY=...
+DETERMINISTIC_LLM_API_MODEL=...
+```
 
-The reasoning behind the shape:
+See [local model configuration](docs/local-llm.md) and
+[writing a rule](docs/writing-a-rule.md).
 
-- **Dev-only.** Deterministic is a local CLI linter; end users don't run an observability server. Tracing is a development aid — opt-in via `.env`, **zero footprint when off**.
-- **Self-hosted + persistent.** Local-first (no prompts leave the box), on a DB with named volumes so **traces survive a Langfuse restart**.
-- **Fail-closed in dev.** If tracing is enabled and Langfuse is down, the process **fails** — in development we observe every LLM call or we don't run. No silent, un-traced calls.
-- **A tool only where one earns its place.** We avoid frameworks we don't need — we *declined* Mastra because the funnel is hand-rolled and works. But observability is a real, unmet need (we'd otherwise hand-roll it badly with throwaway scripts), and Langfuse — open-source, self-hostable, OpenTelemetry-compatible — fits it cleanly. The discipline is the same in both calls: **add the tool only when the need is real.**
+## Development
 
-## Docs
+```bash
+npm test
+npm run lint
+npm run build
+```
 
-- [`docs/architecture.md`](docs/architecture.md) — the one-page architecture
-- `.specify/memory/constitution.md` — the project's principles
+The architecture is summarized in [docs/architecture.md](docs/architecture.md).
 
-## Stack
-
-TypeScript · Node 18+ · Zod · Ollama + Gemma 4 · git · spec-driven (Spec-Kit). MIT.
-
-<!-- deterministic:start -->
-> 🤖 This repo is linted for AI coding agents by **Deterministic** — repo score **99/100**. See [DETERMINISTIC.md](./DETERMINISTIC.md).
-<!-- deterministic:end -->
+TypeScript · Node.js 18+ · Zod · Ollama · Git · MIT

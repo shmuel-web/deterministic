@@ -8,7 +8,6 @@ import { hasCoverageTool } from "./src/rules/static/has-coverage-tool.js";
 import { ciRunsTests } from "./src/rules/static/ci-runs-tests.js";
 import { linterConfigured } from "./src/rules/static/linter-configured.js";
 import { ciRunsLint } from "./src/rules/static/ci-runs-lint.js";
-import { hasAgentContext } from "./src/rules/static/has-agent-context.js";
 import { tsconfigStrict } from "./src/rules/static/tsconfig-strict.js";
 import { lockfileCommitted } from "./src/rules/static/lockfile-committed.js";
 import { licensePresent } from "./src/rules/static/license-present.js";
@@ -17,10 +16,8 @@ import { noCommittedSecrets } from "./src/rules/static/no-committed-secrets.js";
 import { ciRunsTypecheck } from "./src/rules/static/ci-runs-typecheck.js";
 import { gitignoreSane } from "./src/rules/static/gitignore-sane.js";
 import { readmeContext } from "./src/rules/static/readme-context.js";
-import { agentRunsDeterministic } from "./src/rules/static/agent-runs-deterministic.js";
 import { enforcesDeterministic } from "./src/rules/static/enforces-deterministic.js";
 import { coverageThreshold } from "./src/rules/static/coverage-threshold.js";
-import { coverageAgentic } from "./src/rules/static/coverage-agentic.js";
 import { tsIgnoreCount } from "./src/rules/static/ts-ignore-count.js";
 import { importCount } from "./src/rules/static/import-count.js";
 import { fanIn } from "./src/rules/static/fan-in.js";
@@ -29,13 +26,12 @@ import { functionCount } from "./src/rules/static/function-count.js";
 import { parameterCount } from "./src/rules/static/parameter-count.js";
 import { cyclomaticComplexity } from "./src/rules/static/cyclomatic-complexity.js";
 import { cognitiveComplexity } from "./src/rules/static/cognitive-complexity.js";
-import { repoReviewPanel } from "./src/rules/repo-review/rule.js";
 
 /**
  * Project configuration: which rules run (ESLint-style).
  *
  * Importance lives in each issue's `severity`, not a per-rule weight — so the
- * registry is just the enabled rule list. The orchestrator runs each rule only
+ * registry is just the enabled rule list. The engine runs each rule only
  * against its declared target (file vs repo).
  */
 export const rules: Rule[] = [
@@ -58,7 +54,6 @@ export const rules: Rule[] = [
   ciRunsTests,
   linterConfigured,
   ciRunsLint,
-  hasAgentContext,
   tsconfigStrict,
   lockfileCommitted,
   licensePresent,
@@ -67,11 +62,8 @@ export const rules: Rule[] = [
   ciRunsTypecheck,
   gitignoreSane,
   readmeContext,
-  agentRunsDeterministic,
   enforcesDeterministic,
   coverageThreshold,
-  coverageAgentic,
-  repoReviewPanel,
 ];
 
 // Settings live in their own module (rules import them without importing this
