@@ -12,8 +12,7 @@ import type { Rule } from "../../core/rule.js";
  * simple-git-hooks) or a CI job (GitLab / GitHub) that invokes Deterministic.
  * None of them → a major issue (the tool can silently go stale).
  *
- * Complements `agent-runs-deterministic` (which checks the *agent* is told to run
- * it — soft, convention): this checks a *machine* enforces it — hard, unskippable.
+ * This checks machine enforcement rather than relying on developer convention.
  */
 
 // A real Deterministic invocation: installed CLI, `npx`, or the local cli entry.

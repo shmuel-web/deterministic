@@ -4,7 +4,6 @@
 import type { ModelClient, CompleteOptions } from "./rule.js";
 import type { Limit } from "./pool.js";
 import { settings } from "./settings.js";
-import { traced } from "./tracing.js";
 
 /**
  * Output-token ceiling (#85): env override, else the configured default. 0 means
@@ -30,17 +29,13 @@ const OLLAMA_MODEL = process.env.DETERMINISTIC_OLLAMA_MODEL ?? "gemma4";
 
 /**
  * Model tiers (#86) — route a task to an appropriately-sized model:
- *   tiny   — boolean / extraction (the applicability gate, coverage-% read)
  *   scoped — single-concern judgment (intent-legibility)
- *   deep   — code-grounded multi-file judgment (the panel reviewers)
  * Each defaults to the base model, so tiering is a NO-OP until you point a tier at
  * a smaller/faster model via env (e.g. DETERMINISTIC_OLLAMA_MODEL_TINY=gemma3:1b).
  */
-export type ModelTier = "tiny" | "scoped" | "deep";
+export type ModelTier = "scoped";
 const TIER_ENV: Record<ModelTier, string> = {
-  tiny: "DETERMINISTIC_OLLAMA_MODEL_TINY",
   scoped: "DETERMINISTIC_OLLAMA_MODEL_SCOPED",
-  deep: "DETERMINISTIC_OLLAMA_MODEL_DEEP",
 };
 function ollamaModelForTier(tier?: ModelTier): string {
   return (tier && process.env[TIER_ENV[tier]]) || OLLAMA_MODEL;
@@ -117,15 +112,12 @@ export function withConcurrencyLimit(model: ModelClient, limit: Limit): ModelCli
  * model). The API fallback is single-model for now — API tiering is a follow-up.
  */
 export async function resolveModel(tier?: ModelTier): Promise<ModelClient | null> {
-  let client: ModelClient | null = null;
   if (await ollamaReachable(OLLAMA_HOST)) {
-    client = ollamaClient(OLLAMA_HOST, ollamaModelForTier(tier));
-  } else {
-    const url = process.env.DETERMINISTIC_LLM_API_URL;
-    const key = process.env.DETERMINISTIC_LLM_API_KEY;
-    if (url && key) client = apiClient(url, key, process.env.DETERMINISTIC_LLM_API_MODEL ?? "gpt-4o-mini");
+    return ollamaClient(OLLAMA_HOST, ollamaModelForTier(tier));
   }
-  // Dev tracing (#90): wrap the client so every call is recorded. `traced` is a
-  // no-op (identity) unless tracing is active, so this is free when off.
-  return client ? traced(client) : null;
+  const url = process.env.DETERMINISTIC_LLM_API_URL;
+  const key = process.env.DETERMINISTIC_LLM_API_KEY;
+  return url && key
+    ? apiClient(url, key, process.env.DETERMINISTIC_LLM_API_MODEL ?? "gpt-4o-mini")
+    : null;
 }

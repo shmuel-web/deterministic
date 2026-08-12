@@ -1,13 +1,10 @@
 import type { Rule } from "../../core/rule.js";
 import { band, readCoveragePct, isReportStale } from "../../core/coverage.js";
-import { settings } from "../../core/settings.js";
 
 /**
  * Repo rule: score actual test coverage from the report `npm run coverage` / CI
- * produced. Owns coverage when execution is OFF; defers to `coverage-agentic`
- * when execution is ON (which re-runs for a fresh number). A stale report (code
- * changed since it was generated) is FLAGGED rather than trusted — its number
- * would be wrong, and we can't refresh it without execution.
+ * produced. A stale report is flagged rather than trusted because its number no
+ * longer reflects the code being scored.
  */
 export const coverageThreshold: Rule = {
   id: "static/coverage-threshold",
@@ -15,8 +12,6 @@ export const coverageThreshold: Rule = {
   type: "static",
   description: "Scores line coverage from the coverage report (banded by %).",
   async run({ path: root }) {
-    if (settings.execution.enabled) return { issues: [] }; // agentic owns coverage in execution mode
-
     const pct = await readCoveragePct(root);
     if (pct === null) return { issues: [] }; // no report — nothing to measure
 

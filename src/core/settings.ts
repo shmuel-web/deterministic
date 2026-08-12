@@ -19,23 +19,4 @@ export const settings = {
   llm: {
     maxOutputTokens: 0,
   },
-  /**
-   * Agentic execution rules (spec 002) — let a rule RUN a tool (coverage, etc.).
-   * OFF by default: running commands is the scariest capability, so it's opt-in.
-   */
-  execution: {
-    enabled: false,
-    timeoutMs: 120_000,
-  },
-  /**
-   * Agentic REPO-review panel (#72) — expert personas (Architect, Testing-expert)
-   * reviewing the whole project. OFF by default: it's the expensive judgment tier
-   * (several LLM calls over assembled repo context), so it's opt-in and meant for
-   * `init` / on-demand, not every `score repo`.
-   */
-  repoReview: {
-    enabled: false,
-    /** Orchestrate the panel with Mastra (#72) instead of the hand-rolled loop. */
-    useMastra: false,
-  },
 };

@@ -2,26 +2,14 @@
 //   [minor] llm/intent-legibility  The file is missing a module-level JSDoc summarizing its overall purpose. While all exported functions have descriptions, there is no immediate indication at the top of the file regarding what utilities provided within this file accomplish (e.g., 'Provides core logic and entry points for scoring files and repositories against deterministic rules'). → Add a module-level JSDoc comment immediately after the imports to summarize the file's role in the system, clarifying that it handles running rule sets and generating actionable scores for code artifacts.
 // @deterministic:end
 import { promises as fs } from "node:fs";
-import { rules, settings } from "../../deterministic.config.js";
-import { runRules } from "../core/orchestrator.js";
+import { rules } from "../../deterministic.config.js";
+import { runRules } from "../core/rule-engine.js";
 import { score as scoreIssues, type IdentifiedIssue } from "../core/score.js";
 import { writeAnnotation, stripAnnotation } from "../core/annotation.js";
 import { stripReadmeBlock } from "../core/report.js";
 import { resolveModel, withConcurrencyLimit } from "../core/model.js";
 import { createLimiter, defaultConcurrency } from "../core/pool.js";
-import { createExec } from "../core/exec.js";
-import type { ModelClient, RuleExec } from "../core/rule.js";
-
-/**
- * The execution capability (#70), bound to the repo root — but only when
- * execution is opted in (`settings.execution.enabled`, off by default). This is
- * the single opt-in gate: rules never get `ctx.exec` unless it's enabled here.
- */
-function repoExec(root: string): RuleExec | undefined {
-  return settings.execution.enabled
-    ? createExec({ cwd: root, timeoutMs: settings.execution.timeoutMs })
-    : undefined;
-}
+import type { ModelClient } from "../core/rule.js";
 
 export interface FileScore {
   path: string;
@@ -74,7 +62,7 @@ export async function scoreManyFiles(files: string[], modelOverride?: ModelClien
  */
 export async function runRepoRules(root = ".", modelOverride?: ModelClient): Promise<IdentifiedIssue[]> {
   const model = modelOverride ?? (await resolveModel());
-  return runRules(rules, { target: "repo", path: root }, { model: model ?? undefined, exec: repoExec(root) });
+  return runRules(rules, { target: "repo", path: root }, { model: model ?? undefined });
 }
 
 /**

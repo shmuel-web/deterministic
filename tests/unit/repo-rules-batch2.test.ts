@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hasAgentContext } from "../../src/rules/static/has-agent-context.js";
 import { tsconfigStrict } from "../../src/rules/static/tsconfig-strict.js";
 import { lockfileCommitted } from "../../src/rules/static/lockfile-committed.js";
 import { licensePresent } from "../../src/rules/static/license-present.js";
@@ -20,11 +19,6 @@ async function tmpRepo(files: Record<string, string>): Promise<string> {
 const ctx = (root: string) => ({ target: "repo" as const, path: root });
 const issues = async (rule: { run: (c: ReturnType<typeof ctx>) => unknown }, root: string) =>
   ((await rule.run(ctx(root))) as { issues: unknown[] }).issues;
-
-test("has-agent-context: passes with CLAUDE.md, flags without", async () => {
-  assert.equal((await issues(hasAgentContext, await tmpRepo({ "CLAUDE.md": "x" }))).length, 0);
-  assert.equal((await issues(hasAgentContext, await tmpRepo({ "README.md": "x" }))).length, 1);
-});
 
 test("tsconfig-strict: passes when strict, flags when not, inert with no tsconfig", async () => {
   assert.equal((await issues(tsconfigStrict, await tmpRepo({ "tsconfig.json": '{"compilerOptions":{"strict":true}}' }))).length, 0);

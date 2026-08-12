@@ -10,7 +10,7 @@ const COVERAGE = /\bc8\b|\bnyc\b|coverage|--coverage|istanbul/i;
 /**
  * Repo rule: is a coverage tool configured? Coverage is the cheapest objective
  * signal that tests touch meaningful ground. (Presence only — the actual
- * percentage is an execution rule, tracked separately.)
+ * percentage is measured separately from an existing coverage report.)
  */
 export const hasCoverageTool: Rule = {
   id: "static/has-coverage-tool",

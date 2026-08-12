@@ -1,73 +1,66 @@
-# Deterministic — Architecture (one page)
+# Architecture
 
-**A linter for AI coding agents.** It scores the *repo* and the *execution* so
-AI-driven delivery is verifiable, not just fast. It runs locally, and we build it
-with itself.
+Deterministic is a local CLI with one rule engine and two kinds of rules.
 
-## The one idea
-**Rules find issues; the engine derives the score.** A rule never returns a
-number — it returns the problems it found, each with a `fix` and a `severity`.
-The score is then pure arithmetic:
-
-```
-score = max(0, 100 − Σ penalty)      penalties: info −1, minor −3, major −9, critical −27
+```text
+CLI command
+  -> discover all or changed files
+  -> run applicable static and focused LLM rules
+  -> validate and collect issues
+  -> calculate score from fixed severity penalties
+  -> update annotations, local index, and repository report
 ```
 
-No issues → 100. It's *not* an average, so passing rules can't inflate a score and
-a serious issue dominates regardless of how many rules ran. Every point lost maps
-to a named, fixable problem — the score is fully auditable, and praise is
-structurally impossible.
+## Rule contract
 
-## The contract (frozen keystone)
-Everything builds against one interface (`src/core/rule.ts`):
+The public extension point lives in `src/core/rule.ts`:
+
 ```ts
-Rule { id, target: file|repo, type: static|llm, run(ctx) → { issues: [{ problem, fix, severity }] } }
-```
-- **Static rules** (AST/regex/counts) are fast, free, repeatable — they carry the weight.
-- **LLM rules** handle judgment, and are built with the `llmRule({ topic, lookFor })` scaffold that **scopes each to one concern** so the model can't free-associate. Local model required (Ollama/Gemma, API fallback); output is Zod-validated with retry.
-
-Changing this shape is a MAJOR governance event; *adding rules is not*. Community
-rules are the extension point (and the moat).
-
-## Two targets, one engine — and they COMPOSE
-The targets aren't independent; scores flow up a dependency chain:
-```
-file  ──(annotations + index)──▶  repo    = aggregate of file scores + repo-level rules
-```
-- **file** — the atomic unit. The substrate everything composes from.
-- **repo** — `aggregate of file scores + repo-level rules`. Composed from file results + git, not by re-reading the tree.
-
-## Pipeline (per file)
-```
-discover (git ls-files, ignore vendored)
-  → strip our own annotation  → run rules: static inline · LLM via scoped agents
-  → pool issues (bounded concurrency)  → derive score
-  → write annotation INTO the file (issues only) + record in the index
+interface Rule {
+  id: string;
+  target: "file" | "repo";
+  type: "static" | "llm";
+  run(context: RuleContext): RuleResult | Promise<RuleResult>;
+}
 ```
 
-## Where results live
-- **In-file annotation** = the fix list, in the file's native comment syntax. It appears **only when there's something to fix** (clean files are untouched) — low-noise, and a viral "what is this?" wedge when it does show.
-- **Index** (`.deterministic/`, gitignored) = problems-only cache + last-scored commit SHA. **100 is never stored — absence means clean.** This is what makes repo scoring cheap.
-- **Incremental:** `score repo` re-scores only files `git diff` reports changed since the last scan. `init` is the one expensive full pass.
+A rule returns issues containing `problem`, `fix`, and `severity`. The engine in
+`src/core/rule-engine.ts` selects applicable rules, supplies a model only to LLM
+rules, validates results, isolates failures, and collects findings. It contains
+no agent or workflow orchestration.
 
-## Commands
-`init` (full scan) · `score repo` (git-incremental). File scoring is the internal atomic unit (hidden `file` dev command).
+## Modules
 
-## Module map
+```text
+src/cli.ts             command parsing
+src/commands/          full and incremental scoring workflows
+src/core/rule.ts       rule and issue contracts
+src/core/rule-engine.ts rule execution and validation
+src/core/score.ts      pure severity-to-score calculation
+src/core/change-detect.ts Git and filesystem change detection
+src/core/model.ts      Ollama and API-backed model clients
+src/core/llm-rule.ts   bounded single-prompt LLM rule factory
+src/core/index-store.ts local problems-only index
+src/core/annotation.ts in-file result annotations
+src/rules/static/      deterministic checks
+src/rules/llm/         focused judgment checks
 ```
-core/   rule (contract) · score (penalty sum) · orchestrator (gather+run)
-        annotation (in-file) · index-store (cache) · git (change detection)
-        model (Ollama→API) · llm-rule (scoped scaffold) · pool (concurrency) · comment-style
-rules/  static/* · llm/* · repo-review/*   commands/  init · score-repo · score-file
-```
 
-## Module boundaries
-`rules/` and `commands/` depend only on `core/` — the shared kernel (contract,
-scoring, llm-rule, model, pool, orchestrator). `cli.ts` is the thin umbrella that
-wires the commands together.
+## Scopes
 
-## Properties that matter
-auditable · count-invariant scoring · incremental (git) · language-agnostic contract ·
-community-extensible rules · local-first / zero-permission · spec-driven (Spec-Kit).
+- File rules inspect one file's path and content.
+- Repository rules inspect repository configuration or aggregate measurements.
+- `init` scans the whole repository.
+- `score repo` uses the stored marker to rescore only changed files, then
+  refreshes inexpensive repository rules.
 
-**Stack:** TypeScript/Node, Zod, Mastra (agent orchestration), Ollama + Gemma 4, git.
+The `.deterministic/` directory is a gitignored cache. Clean files are omitted
+from the index; absence means a score of 100.
+
+## Design constraints
+
+- Static checks must be deterministic and must not invoke an LLM.
+- Each LLM rule asks one bounded question through `llmRule()`.
+- Rules report issues, never numeric scores.
+- A rule failure cannot abort unrelated checks.
+- The CLI never lets a model choose or execute shell commands.
